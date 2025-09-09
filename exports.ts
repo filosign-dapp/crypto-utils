@@ -29,7 +29,9 @@ export function get_public_key_from_encryption_key(
     }
   }
   if (typeof public_key !== "string") {
-    throw new Error("get_public_key_from_encryption_key: invalid result shape; public_key missing");
+    throw new Error(
+      "get_public_key_from_encryption_key: invalid result shape; public_key missing"
+    );
   }
   return { public_key };
 }
