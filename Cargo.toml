@@ -1,0 +1,25 @@
+[package]
+name = "filosign-crypto-utils"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "test"
+path = "src/test.rs"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+getrandom = { version = "0.2", features = ["js"] }
+argon2 = "0.4"                                     # Argon2id
+hkdf = "0.12"
+sha2 = "0.10"
+chacha20poly1305 = "0.10"                          # XChaCha20Poly1305 AEAD
+base64 = "0.21"
+zeroize = "1.5"
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.5"
+js-sys = "0.3"
+hex = "0.4"

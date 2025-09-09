@@ -1,11 +1,44 @@
 {
-  "name": "@filosign/crypto-utils",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+    "name": "filosign-crypto-utils",
+    "version": "0.1.0",
+    "description": "Crypto utilities for FiloSign",
+    "main": "exports.ts",
+    "types": "exports.ts",
+    "exports": {
+        ".": {
+            "import": "./exports.ts",
+            "require": "./pkg-node/filosign_crypto_utils.js",
+            "types": "./exports.ts"
+        },
+        "./wasm": {
+            "import": "./pkg-node/filosign_crypto_utils.js",
+            "require": "./pkg-node/filosign_crypto_utils.js"
+        }
+    },
+    "files": [
+        "exports.ts",
+        "pkg-node/**/*",
+        "README.md"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/filosign-dapp/crypto-utils.git"
+    },
+    "keywords": [
+        "cryptography",
+        "wasm",
+        "filosign",
+        "encryption"
+    ],
+    "scripts": {
+        "build": "wasm-pack build --target web --out-dir pkg",
+        "build-node": "wasm-pack build --target nodejs --out-dir pkg-node",
+        "test": "npm run build-node && bun run test.ts",
+        "prepublishOnly": "npm run build-node"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "tsx": "^4.0.0",
+        "typescript": "^5.0.0"
+    }
 }
