@@ -1,19 +1,13 @@
 # FiloSign Crypto Utils
 
-WebAssembly-based cryptographic utilities for FiloSign.
+WebAssembly-based cryptographic utilties designed specificlay for FiloSign.
 
 ## Installation
 
 ### From GitHub (for development)
 
 ```bash
-npm install git+https://github.com/filosign-dapp/crypto-utils.git
-```
-
-### From npm (when published)
-
-```bash
-npm install filosign-crypto-utils
+bun add git+https://github.com/filosign-dapp/crypto-utils.git
 ```
 
 ## Usage
@@ -71,8 +65,8 @@ Regenerates an encryption key from encrypted seed.
 
 ```bash
 # Build WASM package
-npm run build-node
+bun run build-node
 
 # Run tests
-npm test
+bun run test
 ```
