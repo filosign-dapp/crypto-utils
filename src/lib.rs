@@ -7,6 +7,20 @@ use chacha20poly1305::{XChaCha20Poly1305, aead::{Aead, KeyInit}, XNonce};
 use base64::{engine::general_purpose, Engine as _};
 use zeroize::Zeroize;
 use serde::Serialize;
+use p256::{
+    PublicKey, 
+    elliptic_curve::{
+        sec1::ToEncodedPoint,
+        ecdh::diffie_hellman,
+    },
+    SecretKey,
+};
+use rand_core::OsRng;
+
+#[derive(Serialize)]
+struct PublicKeyResult {
+  public_key: String,
+}
 
 #[derive(Serialize)]
 struct RegisterChallenge {
@@ -184,5 +198,124 @@ pub fn regenerate_encryption_key(
     encryption_key: general_purpose::STANDARD.encode(&encryption_key),
   };
 
+  serde_wasm_bindgen::to_value(&res).unwrap()
+}
+
+#[derive(Serialize)]
+struct KeyPairResult {
+  private_key: String, // base64 encoded private key (32 bytes)
+  public_key: String,  // base64 encoded compressed public key (33 bytes)
+}
+
+#[wasm_bindgen]
+pub fn generate_key_pair() -> JsValue {
+  // Generate a secret key instead of ephemeral secret
+  let secret_key = SecretKey::random(&mut OsRng);
+  let public_key = secret_key.public_key();
+  
+  // Convert to bytes
+  let private_bytes = secret_key.to_bytes();
+  let public_point = public_key.to_encoded_point(true); // compressed format
+  let public_bytes = public_point.as_bytes();
+  
+  let res = KeyPairResult {
+    private_key: general_purpose::STANDARD.encode(&private_bytes),
+    public_key: general_purpose::STANDARD.encode(public_bytes),
+  };
+  
+  serde_wasm_bindgen::to_value(&res).unwrap()
+}
+
+#[derive(Serialize)]
+struct SharedKeyResult {
+  shared_key: String, // base64 encoded shared key (32 bytes)
+}
+
+#[wasm_bindgen]
+pub fn create_shared_key(
+  signature_b64: &str, 
+  pin: &str, 
+  pin_salt_b64: &str, 
+  auth_salt_b64: &str, 
+  wrapper_salt_b64: &str, 
+  enc_seed_b64: &str, 
+  cid: &str,
+  other_public_key_b64: &str
+) -> JsValue {
+  // First, regenerate our encryption key (this becomes our private key material)
+  let regen_result = regenerate_encryption_key(
+    signature_b64, 
+    pin, 
+    pin_salt_b64, 
+    auth_salt_b64, 
+    wrapper_salt_b64, 
+    enc_seed_b64, 
+    cid
+  );
+  
+  // Extract the encryption key from the result
+  let regen_obj: serde_json::Value = serde_wasm_bindgen::from_value(regen_result).expect("parse regen result");
+  let encryption_key_b64 = regen_obj["encryption_key"].as_str().expect("get encryption_key");
+  let encryption_key = general_purpose::STANDARD.decode(encryption_key_b64).expect("decode encryption_key");
+  
+  // Use the encryption key as private key material for ECDH
+  let private_key_bytes: [u8; 32] = encryption_key.try_into().expect("encryption key to 32 bytes");
+  let private_key = SecretKey::from_bytes(&private_key_bytes.into()).expect("create private key");
+  
+  // Decode the other party's public key
+  let other_public_key_bytes = general_purpose::STANDARD.decode(other_public_key_b64).expect("decode other public key");
+  let other_public_key = PublicKey::from_sec1_bytes(&other_public_key_bytes).expect("create public key");
+  
+  // Perform ECDH to get shared secret
+  let shared_secret = diffie_hellman(
+    private_key.to_nonzero_scalar(),
+    other_public_key.as_affine()
+  );
+  
+  // Derive a proper shared key using HKDF
+  let hk = Hkdf::<Sha256>::new(None, shared_secret.raw_secret_bytes());
+  let mut shared_key = [0u8; 32];
+  hk.expand(b"shared encryption key", &mut shared_key).expect("hkdf shared key");
+  
+  let res = SharedKeyResult {
+    shared_key: general_purpose::STANDARD.encode(&shared_key),
+  };
+  
+  serde_wasm_bindgen::to_value(&res).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn get_public_key_from_regenerated(
+  signature_b64: &str, 
+  pin: &str, 
+  pin_salt_b64: &str, 
+  auth_salt_b64: &str, 
+  wrapper_salt_b64: &str, 
+  enc_seed_b64: &str, 
+  cid: &str
+) -> JsValue {
+  // Regenerate our encryption key
+  let regen_result = regenerate_encryption_key(
+    signature_b64, 
+    pin, 
+    pin_salt_b64, 
+    auth_salt_b64, 
+    wrapper_salt_b64, 
+    enc_seed_b64, 
+    cid
+  );
+  
+  // Extract the encryption key from the result
+  let regen_obj: serde_json::Value = serde_wasm_bindgen::from_value(regen_result).expect("parse regen result");
+  let encryption_key_b64 = regen_obj["encryption_key"].as_str().expect("get encryption_key");
+  let encryption_key = general_purpose::STANDARD.decode(encryption_key_b64).expect("decode encryption_key");
+  
+  // Use the encryption key as private key material
+  let private_key_bytes: [u8; 32] = encryption_key.try_into().expect("encryption key to 32 bytes");
+  let private_key = SecretKey::from_bytes(&private_key_bytes.into()).expect("create private key");
+  let public_key = private_key.public_key();
+  
+  let public_point = public_key.to_encoded_point(true); // compressed format
+  let res = PublicKeyResult { public_key: general_purpose::STANDARD.encode(public_point.as_bytes()) };
   serde_wasm_bindgen::to_value(&res).unwrap()
 }

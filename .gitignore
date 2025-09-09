@@ -1,6 +1,33 @@
+# Build artifacts (keep pkg-node for GitHub distribution)
 /target
+
+# Dependencies  
 node_modules
-pkg/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
 .DS_Store
+Thumbs.db
+
+# Logs
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
 .env
+.env.local
+.env.*.local
+
+# Optional npm cache directory
+.npm
+
+# Temporary folders
+tmp/
+temp/

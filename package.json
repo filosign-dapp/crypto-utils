@@ -31,10 +31,9 @@
         "encryption"
     ],
     "scripts": {
-        "build": "wasm-pack build --target web --out-dir pkg",
-        "build-node": "wasm-pack build --target nodejs --out-dir pkg-node",
-        "test": "npm run build-node && bun run test.ts",
-        "prepublishOnly": "npm run build-node"
+        "build": "wasm-pack build --target web --out-dir pkg; wasm-pack build --target nodejs --out-dir pkg-node",
+        "test": "npm run build && bun run test.ts",
+        "prepublishOnly": "npm run build"
     },
     "devDependencies": {
         "@types/node": "^20.0.0",
