@@ -5,6 +5,7 @@ import {
   generate_key_pair,
   create_shared_key,
   get_public_key_from_encryption_key,
+  generate_salt,
   type RegisterChallengeResult,
   type EncryptionMaterialResult,
   type RegenerateKeyResult,
@@ -367,11 +368,49 @@ async function testStandaloneKeyPairs() {
   }
 }
 
+async function testSaltGeneration() {
+  console.log("🧂 Testing Salt Generation...\n");
+  // Length test
+  const s16 = generate_salt(16);
+  const s32 = generate_salt(32);
+  if (typeof s16 !== "string" || typeof s32 !== "string") {
+    console.log("❌ Salt not returned as string");
+    return false;
+  }
+  // Decode base64 and verify lengths
+  const b16 = Buffer.from(s16, "base64");
+  const b32 = Buffer.from(s32, "base64");
+  if (b16.length !== 16 || b32.length !== 32) {
+    console.log("❌ Salt lengths incorrect", b16.length, b32.length);
+    return false;
+  }
+  if (s16 === s32 || s16 === generate_salt(16)) {
+    console.log("❌ Salts should be random");
+    return false;
+  }
+  // Error handling (invalid length)
+  let threw = false;
+  try {
+    generate_salt(0);
+  } catch {
+    threw = true;
+  }
+  if (!threw) {
+    console.log("❌ Expected error for zero length");
+    return false;
+  }
+  console.log("✅ Salt generation passed\n");
+  return true;
+}
+
 async function runAllTests() {
   console.log("🚀 Running Complete FiloSign Crypto Utils Test Suite\n");
   console.log("============================================================\n");
 
   let allPassed = true;
+
+  const saltTests = await testSaltGeneration();
+  allPassed = allPassed && saltTests;
 
   // Run basic functionality tests
   const basicTests = await testBasicFunctionality();

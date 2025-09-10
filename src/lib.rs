@@ -319,3 +319,15 @@ pub fn get_public_key_from_regenerated(
   let res = PublicKeyResult { public_key: general_purpose::STANDARD.encode(public_point.as_bytes()) };
   serde_wasm_bindgen::to_value(&res).unwrap()
 }
+
+#[wasm_bindgen]
+pub fn generate_salt(len: u32) -> String {
+  // Basic length constraints to avoid huge allocations in WASM context
+  // Allow between 1 and 1024 bytes; adjust as needed
+  if len == 0 || len > 1024 {
+    panic!("invalid salt length");
+  }
+  let mut buf = vec![0u8; len as usize];
+  getrandom(&mut buf).expect("rng");
+  general_purpose::STANDARD.encode(&buf)
+}

@@ -108,3 +108,5 @@ export declare function get_public_key_from_regenerated(
   enc_seed_b64: string,
   cid: string
 ): { public_key: string };
+
+export declare function generate_salt(len: number): string;
