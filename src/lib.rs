@@ -63,7 +63,7 @@ struct DerivationResult {
 }
 
 #[wasm_bindgen]
-pub fn derive_encryption_material(signature_b64: &str, pin: &str, pin_salt_b64: &str, auth_salt_b64: &str, wrapper_salt_b64: &str, cid: &str) -> JsValue {
+pub fn derive_encryption_material(signature_b64: &str, pin: &str, pin_salt_b64: &str, auth_salt_b64: &str, wrapper_salt_b64: &str, info: &str) -> JsValue {
   // decode inputs
   let pin_salt = general_purpose::STANDARD.decode(pin_salt_b64).expect("bad base64");
   let auth_salt = general_purpose::STANDARD.decode(auth_salt_b64).expect("bad base64");
@@ -107,10 +107,10 @@ pub fn derive_encryption_material(signature_b64: &str, pin: &str, pin_salt_b64: 
   let nonce = XNonce::from(nonce24);
   let ciphertext = aead.encrypt(&nonce, seed.as_ref()).expect("encrypt");
 
-  // 7) encryption_key = HKDF(seed, cid)
+  // 7) encryption_key = HKDF(seed, info)
   let hk3 = Hkdf::<Sha256>::new(None, &seed);
   let mut encryption_key = [0u8; 32];
-  hk3.expand(cid.as_bytes(), &mut encryption_key).expect("hkdf");
+  hk3.expand(info.as_bytes(), &mut encryption_key).expect("hkdf");
 
   // zero secrets
   auth_key.zeroize();
@@ -142,7 +142,7 @@ pub fn regenerate_encryption_key(
   auth_salt_b64: &str, 
   wrapper_salt_b64: &str, 
   enc_seed_b64: &str, 
-  cid: &str
+  info: &str
 ) -> JsValue {
   // decode inputs
   let pin_salt = general_purpose::STANDARD.decode(pin_salt_b64).expect("bad pin_salt base64");
@@ -183,10 +183,10 @@ pub fn regenerate_encryption_key(
   let nonce = XNonce::from(nonce24);
   let seed = aead.decrypt(&nonce, ciphertext).expect("decrypt failed - wrong pin or corrupted data");
 
-  // 5) encryption_key = HKDF(seed, cid)
+  // 5) encryption_key = HKDF(seed, info)
   let hk3 = Hkdf::<Sha256>::new(None, &seed);
   let mut encryption_key = [0u8; 32];
-  hk3.expand(cid.as_bytes(), &mut encryption_key).expect("hkdf");
+  hk3.expand(info.as_bytes(), &mut encryption_key).expect("hkdf");
 
   // zero secrets
   auth_key.zeroize();
@@ -239,7 +239,7 @@ pub fn create_shared_key(
   auth_salt_b64: &str, 
   wrapper_salt_b64: &str, 
   enc_seed_b64: &str, 
-  cid: &str,
+  info: &str,
   other_public_key_b64: &str
 ) -> JsValue {
   // First, regenerate our encryption key (this becomes our private key material)
@@ -250,7 +250,7 @@ pub fn create_shared_key(
     auth_salt_b64, 
     wrapper_salt_b64, 
     enc_seed_b64, 
-    cid
+    info
   );
   
   // Extract the encryption key from the result

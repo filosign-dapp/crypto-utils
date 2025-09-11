@@ -41,6 +41,7 @@ export interface RegisterChallengeResult {
   pin_salt: string;
   auth_salt: string;
   wrapper_salt: string;
+  nonce: string;
 }
 
 export interface EncryptionMaterialResult {
