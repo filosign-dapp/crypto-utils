@@ -17,6 +17,10 @@ use p256::{
 };
 use rand_core::OsRng;
 
+fn generate_salt_internal(buf: &mut [u8]) {
+  getrandom(buf).expect("rng");
+}
+
 #[derive(Serialize)]
 struct PublicKeyResult {
   public_key: String,
@@ -33,16 +37,15 @@ struct RegisterChallenge {
 
 #[wasm_bindgen]
 pub fn generate_register_challenge(address: &str, version: &str) -> JsValue {
-  // 16 byte nonce/salts
-  let mut nonce = [0u8; 16];
-  let mut pin_salt = [0u8; 16];
-  let mut auth_salt = [0u8; 16];
-  let mut wrapper_salt = [0u8; 16];
+  let mut nonce = [0u8; 32];
+  let mut pin_salt = [0u8; 32];
+  let mut auth_salt = [0u8; 32];
+  let mut wrapper_salt = [0u8; 32];
 
-  getrandom(&mut nonce).expect("rng");
-  getrandom(&mut pin_salt).expect("rng");
-  getrandom(&mut auth_salt).expect("rng");
-  getrandom(&mut wrapper_salt).expect("rng");
+  generate_salt_internal(&mut nonce);
+  generate_salt_internal(&mut pin_salt);
+  generate_salt_internal(&mut auth_salt);
+  generate_salt_internal(&mut wrapper_salt);
 
   let challenge = format!("filosign:v{}:{}:{}", version, address, hex::encode(nonce));
   let rc = RegisterChallenge {
@@ -93,7 +96,7 @@ pub fn derive_encryption_material(signature_b64: &str, pin: &str, pin_salt_b64: 
 
   // 4) seed = random(32)
   let mut seed = [0u8; 32];
-  getrandom(&mut seed).expect("rng");
+  generate_salt_internal(&mut seed);
 
   // 5) commitment = SHA256(seed)
   let mut hasher = Sha256::new();
@@ -103,7 +106,7 @@ pub fn derive_encryption_material(signature_b64: &str, pin: &str, pin_salt_b64: 
   // 6) enc_seed = XChaCha20Poly1305(wrapper_key).encrypt(nonce24, seed)
   let aead = XChaCha20Poly1305::new(wrapper_key.as_ref().into());
   let mut nonce24 = [0u8; 24];
-  getrandom(&mut nonce24).expect("rng");
+  generate_salt_internal(&mut nonce24);
   let nonce = XNonce::from(nonce24);
   let ciphertext = aead.encrypt(&nonce, seed.as_ref()).expect("encrypt");
 
@@ -322,12 +325,16 @@ pub fn get_public_key_from_regenerated(
 
 #[wasm_bindgen]
 pub fn generate_salt(len: u32) -> String {
-  // Basic length constraints to avoid huge allocations in WASM context
-  // Allow between 1 and 1024 bytes; adjust as needed
   if len == 0 || len > 1024 {
     panic!("invalid salt length");
   }
   let mut buf = vec![0u8; len as usize];
-  getrandom(&mut buf).expect("rng");
+  generate_salt_internal(&mut buf);
   general_purpose::STANDARD.encode(&buf)
+}
+
+#[wasm_bindgen]
+pub fn to_hex(b64: &str) -> String {
+  let bytes = general_purpose::STANDARD.decode(b64).expect("invalid base64");
+  hex::encode(bytes)
 }

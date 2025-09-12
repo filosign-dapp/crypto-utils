@@ -9,7 +9,7 @@ export function get_public_key_from_encryption_key(
   auth_salt_b64: string,
   wrapper_salt_b64: string,
   enc_seed_b64: string,
-  cid: string
+  info: string
 ): { public_key: string } {
   const res = wasm.get_public_key_from_regenerated(
     signature_b64,
@@ -18,7 +18,7 @@ export function get_public_key_from_encryption_key(
     auth_salt_b64,
     wrapper_salt_b64,
     enc_seed_b64,
-    cid
+    info
   );
   let public_key: unknown = undefined;
   if (res && typeof res === "object") {
@@ -74,7 +74,7 @@ export declare function derive_encryption_material(
   pin_salt_b64: string,
   auth_salt_b64: string,
   wrapper_salt_b64: string,
-  cid: string
+  info: string
 ): EncryptionMaterialResult;
 
 export declare function regenerate_encryption_key(
@@ -84,7 +84,7 @@ export declare function regenerate_encryption_key(
   auth_salt_b64: string,
   wrapper_salt_b64: string,
   enc_seed_b64: string,
-  cid: string
+  info: string
 ): RegenerateKeyResult;
 
 export declare function generate_key_pair(): KeyPairResult;
@@ -96,7 +96,7 @@ export declare function create_shared_key(
   auth_salt_b64: string,
   wrapper_salt_b64: string,
   enc_seed_b64: string,
-  cid: string,
+  info: string,
   other_public_key_b64: string
 ): SharedKeyResult;
 
@@ -107,7 +107,9 @@ export declare function get_public_key_from_regenerated(
   auth_salt_b64: string,
   wrapper_salt_b64: string,
   enc_seed_b64: string,
-  cid: string
+  info: string
 ): { public_key: string };
 
 export declare function generate_salt(len: number): string;
+
+export declare function to_hex(b64: string): string;
