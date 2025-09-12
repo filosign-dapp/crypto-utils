@@ -1,23 +1,22 @@
-export * from "./pkg-node/filosign_crypto_utils.js";
 import * as wasm from "./pkg-node/filosign_crypto_utils.js";
 
-// Re-export with better naming but normalize return shape to a plain object
-export function get_public_key_from_encryption_key(
-  signature_b64: string,
+// Re-export with camelCase naming for JavaScript consumers
+export function getPublicKeyFromEncryptionKey(
+  signatureB64: string,
   pin: string,
-  pin_salt_b64: string,
-  auth_salt_b64: string,
-  wrapper_salt_b64: string,
-  enc_seed_b64: string,
+  pinSaltB64: string,
+  authSaltB64: string,
+  wrapperSaltB64: string,
+  encSeedB64: string,
   info: string
-): { public_key: string } {
+): { publicKey: string } {
   const res = wasm.get_public_key_from_regenerated(
-    signature_b64,
+    signatureB64,
     pin,
-    pin_salt_b64,
-    auth_salt_b64,
-    wrapper_salt_b64,
-    enc_seed_b64,
+    pinSaltB64,
+    authSaltB64,
+    wrapperSaltB64,
+    encSeedB64,
     info
   );
   let public_key: unknown = undefined;
@@ -30,86 +29,190 @@ export function get_public_key_from_encryption_key(
   }
   if (typeof public_key !== "string") {
     throw new Error(
-      "get_public_key_from_encryption_key: invalid result shape; public_key missing"
+      "getPublicKeyFromEncryptionKey: invalid result shape; public_key missing"
     );
   }
-  return { public_key };
+  return { publicKey: public_key };
 }
 
 export interface RegisterChallengeResult {
   challenge: string;
-  pin_salt: string;
-  auth_salt: string;
-  wrapper_salt: string;
+  pinSalt: string;
+  authSalt: string;
+  wrapperSalt: string;
   nonce: string;
 }
 
 export interface EncryptionMaterialResult {
   commitment: string;
-  enc_seed: string;
-  encryption_key: string;
+  encSeed: string;
+  encryptionKey: string;
 }
 
 export interface RegenerateKeyResult {
-  encryption_key: string;
+  encryptionKey: string;
 }
 
 export interface KeyPairResult {
-  private_key: string;
-  public_key: string;
+  privateKey: string;
+  publicKey: string;
 }
 
 export interface SharedKeyResult {
-  shared_key: string;
+  sharedKey: string;
 }
 
-export declare function generate_register_challenge(
+export function generateRegisterChallenge(
   address: string,
   version: string
-): RegisterChallengeResult;
+): RegisterChallengeResult {
+  const res = wasm.generate_register_challenge(address, version);
+  if (!res || typeof res !== "object") {
+    throw new Error("generateRegisterChallenge: invalid result");
+  }
+  const result = res as any;
+  return {
+    challenge: result.challenge,
+    pinSalt: result.pin_salt,
+    authSalt: result.auth_salt,
+    wrapperSalt: result.wrapper_salt,
+    nonce: result.nonce,
+  };
+}
 
-export declare function derive_encryption_material(
-  signature_b64: string,
+export function deriveEncryptionMaterial(
+  signatureB64: string,
   pin: string,
-  pin_salt_b64: string,
-  auth_salt_b64: string,
-  wrapper_salt_b64: string,
+  pinSaltB64: string,
+  authSaltB64: string,
+  wrapperSaltB64: string,
   info: string
-): EncryptionMaterialResult;
+): EncryptionMaterialResult {
+  const res = wasm.derive_encryption_material(
+    signatureB64,
+    pin,
+    pinSaltB64,
+    authSaltB64,
+    wrapperSaltB64,
+    info
+  );
+  if (!res || typeof res !== "object") {
+    throw new Error("deriveEncryptionMaterial: invalid result");
+  }
+  const result = res as any;
+  return {
+    commitment: result.commitment,
+    encSeed: result.enc_seed,
+    encryptionKey: result.encryption_key,
+  };
+}
 
-export declare function regenerate_encryption_key(
-  signature_b64: string,
+export function regenerateEncryptionKey(
+  signatureB64: string,
   pin: string,
-  pin_salt_b64: string,
-  auth_salt_b64: string,
-  wrapper_salt_b64: string,
-  enc_seed_b64: string,
+  pinSaltB64: string,
+  authSaltB64: string,
+  wrapperSaltB64: string,
+  encSeedB64: string,
   info: string
-): RegenerateKeyResult;
+): RegenerateKeyResult {
+  const res = wasm.regenerate_encryption_key(
+    signatureB64,
+    pin,
+    pinSaltB64,
+    authSaltB64,
+    wrapperSaltB64,
+    encSeedB64,
+    info
+  );
+  if (!res || typeof res !== "object") {
+    throw new Error("regenerateEncryptionKey: invalid result");
+  }
+  const result = res as any;
+  return {
+    encryptionKey: result.encryption_key,
+  };
+}
 
-export declare function generate_key_pair(): KeyPairResult;
+export function generateKeyPair(): KeyPairResult {
+  const res = wasm.generate_key_pair();
+  if (!res || typeof res !== "object") {
+    throw new Error("generateKeyPair: invalid result");
+  }
+  const result = res as any;
+  return {
+    privateKey: result.private_key,
+    publicKey: result.public_key,
+  };
+}
 
-export declare function create_shared_key(
-  signature_b64: string,
+export function createSharedKey(
+  signatureB64: string,
   pin: string,
-  pin_salt_b64: string,
-  auth_salt_b64: string,
-  wrapper_salt_b64: string,
-  enc_seed_b64: string,
+  pinSaltB64: string,
+  authSaltB64: string,
+  wrapperSaltB64: string,
+  encSeedB64: string,
   info: string,
-  other_public_key_b64: string
-): SharedKeyResult;
+  otherPublicKeyB64: string
+): SharedKeyResult {
+  const res = wasm.create_shared_key(
+    signatureB64,
+    pin,
+    pinSaltB64,
+    authSaltB64,
+    wrapperSaltB64,
+    encSeedB64,
+    info,
+    otherPublicKeyB64
+  );
+  if (!res || typeof res !== "object") {
+    throw new Error("createSharedKey: invalid result");
+  }
+  const result = res as any;
+  return {
+    sharedKey: result.shared_key,
+  };
+}
 
-export declare function get_public_key_from_regenerated(
-  signature_b64: string,
+export function getPublicKeyFromRegenerated(
+  signatureB64: string,
   pin: string,
-  pin_salt_b64: string,
-  auth_salt_b64: string,
-  wrapper_salt_b64: string,
-  enc_seed_b64: string,
+  pinSaltB64: string,
+  authSaltB64: string,
+  wrapperSaltB64: string,
+  encSeedB64: string,
   info: string
-): { public_key: string };
+): { publicKey: string } {
+  const res = wasm.get_public_key_from_regenerated(
+    signatureB64,
+    pin,
+    pinSaltB64,
+    authSaltB64,
+    wrapperSaltB64,
+    encSeedB64,
+    info
+  );
+  let public_key: unknown = undefined;
+  if (res && typeof res === "object") {
+    if (res instanceof Map) {
+      public_key = res.get("public_key");
+    } else if ("public_key" in (res as any)) {
+      public_key = (res as any).public_key;
+    }
+  }
+  if (typeof public_key !== "string") {
+    throw new Error(
+      "getPublicKeyFromRegenerated: invalid result shape; public_key missing"
+    );
+  }
+  return { publicKey: public_key };
+}
 
-export declare function generate_salt(len: number): string;
+export function generateSalt(len: number): string {
+  return wasm.generate_salt(len);
+}
 
-export declare function to_hex(b64: string): string;
+export function toHex(b64: string): string {
+  return wasm.to_hex(b64);
+}

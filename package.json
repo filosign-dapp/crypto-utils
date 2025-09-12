@@ -1,6 +1,6 @@
 {
     "name": "filosign-crypto-utils",
-    "version": "0.2.3",
+    "version": "0.2.4",
     "description": "Crypto utilities for FiloSign",
     "main": "exports.ts",
     "types": "exports.ts",

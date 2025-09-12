@@ -1,11 +1,11 @@
 import {
-  generate_register_challenge,
-  derive_encryption_material,
-  regenerate_encryption_key,
-  generate_key_pair,
-  create_shared_key,
-  get_public_key_from_encryption_key,
-  generate_salt,
+  generateRegisterChallenge,
+  deriveEncryptionMaterial,
+  regenerateEncryptionKey,
+  generateKeyPair,
+  createSharedKey,
+  getPublicKeyFromEncryptionKey,
+  generateSalt,
   type RegisterChallengeResult,
   type EncryptionMaterialResult,
   type RegenerateKeyResult,
@@ -21,8 +21,8 @@ async function testBasicFunctionality() {
   const address = "0x1234567890abcdef";
   const version = "1";
 
-  const challengeResult1 = generate_register_challenge(address, version);
-  const challengeResult2 = generate_register_challenge(address, version);
+  const challengeResult1 = generateRegisterChallenge(address, version);
+  const challengeResult2 = generateRegisterChallenge(address, version);
 
   console.log("✓ Challenge 1:", challengeResult1.challenge);
   console.log("✓ Challenge 2:", challengeResult2.challenge);
@@ -45,7 +45,7 @@ async function testBasicFunctionality() {
   const cid = "test_cid";
 
   // First derivation
-  const derivation1 = derive_encryption_material(
+  const derivation1 = deriveEncryptionMaterial(
     signatureB64,
     pin,
     pinSaltB64,
@@ -55,7 +55,7 @@ async function testBasicFunctionality() {
   );
 
   // Second derivation with same inputs (should produce different results due to random seed)
-  const derivation2 = derive_encryption_material(
+  const derivation2 = deriveEncryptionMaterial(
     signatureB64,
     pin,
     pinSaltB64,
@@ -78,34 +78,34 @@ async function testBasicFunctionality() {
   // Test 3: Regenerate encryption key from encrypted seed
   console.log("🔑 Test 3: Regenerate encryption key from encrypted seed");
 
-  const regeneratedResult1 = regenerate_encryption_key(
+  const regeneratedResult1 = regenerateEncryptionKey(
     signatureB64,
     pin,
     pinSaltB64,
     authSaltB64,
     wrapperSaltB64,
-    derivation1.enc_seed,
+    derivation1.encSeed,
     cid
   );
 
-  const regeneratedResult2 = regenerate_encryption_key(
+  const regeneratedResult2 = regenerateEncryptionKey(
     signatureB64,
     pin,
     pinSaltB64,
     authSaltB64,
     wrapperSaltB64,
-    derivation1.enc_seed,
+    derivation1.encSeed,
     cid
   );
 
-  console.log("✓ Original encryption key:", derivation1.encryption_key);
-  console.log("✓ Regenerated key 1:", regeneratedResult1.encryption_key);
-  console.log("✓ Regenerated key 2:", regeneratedResult2.encryption_key);
+  console.log("✓ Original encryption key:", derivation1.encryptionKey);
+  console.log("✓ Regenerated key 1:", regeneratedResult1.encryptionKey);
+  console.log("✓ Regenerated key 2:", regeneratedResult2.encryptionKey);
 
   // Verify regenerated keys match original and each other
   if (
-    derivation1.encryption_key === regeneratedResult1.encryption_key &&
-    regeneratedResult1.encryption_key === regeneratedResult2.encryption_key
+    derivation1.encryptionKey === regeneratedResult1.encryptionKey &&
+    regeneratedResult1.encryptionKey === regeneratedResult2.encryptionKey
   ) {
     console.log("✅ Encryption key regeneration works correctly\n");
   } else {
@@ -118,17 +118,17 @@ async function testBasicFunctionality() {
 
   const wrongPin = "5678";
   try {
-    const wrongKeyResult = regenerate_encryption_key(
+    const wrongKeyResult = regenerateEncryptionKey(
       signatureB64,
       wrongPin,
       pinSaltB64,
       authSaltB64,
       wrapperSaltB64,
-      derivation1.enc_seed,
+      derivation1.encSeed,
       cid
     );
 
-    if (wrongKeyResult.encryption_key !== derivation1.encryption_key) {
+    if (wrongKeyResult.encryptionKey !== derivation1.encryptionKey) {
       console.log("✅ Wrong PIN produces different key (as expected)\n");
     } else {
       console.log("❌ Wrong PIN should produce different key\n");
@@ -142,17 +142,17 @@ async function testBasicFunctionality() {
   console.log("🎯 Test 5: Test with different CID");
 
   const differentCid = "different_cid";
-  const differentCidResult = regenerate_encryption_key(
+  const differentCidResult = regenerateEncryptionKey(
     signatureB64,
     pin,
     pinSaltB64,
     authSaltB64,
     wrapperSaltB64,
-    derivation1.enc_seed,
+    derivation1.encSeed,
     differentCid
   );
 
-  if (differentCidResult.encryption_key !== derivation1.encryption_key) {
+  if (differentCidResult.encryptionKey !== derivation1.encryptionKey) {
     console.log(
       "✅ Different CID produces different encryption key (as expected)\n"
     );
@@ -176,17 +176,17 @@ async function testKeyExchange() {
   console.log("👤 Setting up Alice's encryption material...");
 
   // Alice generates her challenge and derives encryption material
-  const aliceChallenge = generate_register_challenge(aliceAddress, version);
+  const aliceChallenge = generateRegisterChallenge(aliceAddress, version);
   const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE="; // Alice's signature
   const alicePin = "1234";
   const aliceCid = "alice_cid";
 
-  const aliceMaterial = derive_encryption_material(
+  const aliceMaterial = deriveEncryptionMaterial(
     aliceSignature,
     alicePin,
-    aliceChallenge.pin_salt,
-    aliceChallenge.auth_salt,
-    aliceChallenge.wrapper_salt,
+    aliceChallenge.pinSalt,
+    aliceChallenge.authSalt,
+    aliceChallenge.wrapperSalt,
     aliceCid
   );
 
@@ -195,17 +195,17 @@ async function testKeyExchange() {
   console.log("\n👤 Setting up Bob's encryption material...");
 
   // Bob generates his challenge and derives encryption material
-  const bobChallenge = generate_register_challenge(bobAddress, version);
+  const bobChallenge = generateRegisterChallenge(bobAddress, version);
   const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh"; // Bob's signature
   const bobPin = "5678";
   const bobCid = "bob_cid";
 
-  const bobMaterial = derive_encryption_material(
+  const bobMaterial = deriveEncryptionMaterial(
     bobSignature,
     bobPin,
-    bobChallenge.pin_salt,
-    bobChallenge.auth_salt,
-    bobChallenge.wrapper_salt,
+    bobChallenge.pinSalt,
+    bobChallenge.authSalt,
+    bobChallenge.wrapperSalt,
     bobCid
   );
 
@@ -214,13 +214,13 @@ async function testKeyExchange() {
   console.log("\n🔑 Generating public keys from encryption keys...");
 
   // Alice gets her public key from her encryption material
-  const alicePublicKeyResult = get_public_key_from_encryption_key(
+  const alicePublicKeyResult = getPublicKeyFromEncryptionKey(
     aliceSignature,
     alicePin,
-    aliceChallenge.pin_salt,
-    aliceChallenge.auth_salt,
-    aliceChallenge.wrapper_salt,
-    aliceMaterial.enc_seed,
+    aliceChallenge.pinSalt,
+    aliceChallenge.authSalt,
+    aliceChallenge.wrapperSalt,
+    aliceMaterial.encSeed,
     aliceCid
   );
 
@@ -229,13 +229,13 @@ async function testKeyExchange() {
   console.log("Type of result:", typeof alicePublicKeyResult);
 
   // Bob gets his public key from his encryption material
-  const bobPublicKeyResult = get_public_key_from_encryption_key(
+  const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
     bobSignature,
     bobPin,
-    bobChallenge.pin_salt,
-    bobChallenge.auth_salt,
-    bobChallenge.wrapper_salt,
-    bobMaterial.enc_seed,
+    bobChallenge.pinSalt,
+    bobChallenge.authSalt,
+    bobChallenge.wrapperSalt,
+    bobMaterial.encSeed,
     bobCid
   );
 
@@ -243,15 +243,15 @@ async function testKeyExchange() {
   console.log("Bob's full public key result:", bobPublicKeyResult);
   console.log("Type of result:", typeof bobPublicKeyResult);
 
-  console.log("✓ Alice's public key:", alicePublicKeyResult.public_key);
-  console.log("✓ Bob's public key:", bobPublicKeyResult.public_key);
+  console.log("✓ Alice's public key:", alicePublicKeyResult.publicKey);
+  console.log("✓ Bob's public key:", bobPublicKeyResult.publicKey);
 
   // Debug: Check if public keys are valid
-  if (!alicePublicKeyResult.public_key) {
+  if (!alicePublicKeyResult.publicKey) {
     console.log("❌ Alice's public key is undefined!");
     return false;
   }
-  if (!bobPublicKeyResult.public_key) {
+  if (!bobPublicKeyResult.publicKey) {
     console.log("❌ Bob's public key is undefined!");
     return false;
   }
@@ -259,34 +259,34 @@ async function testKeyExchange() {
   console.log("\n🤝 Creating shared keys...");
 
   // Alice creates shared key with Bob's public key
-  const aliceSharedKey = create_shared_key(
+  const aliceSharedKey = createSharedKey(
     aliceSignature,
     alicePin,
-    aliceChallenge.pin_salt,
-    aliceChallenge.auth_salt,
-    aliceChallenge.wrapper_salt,
-    aliceMaterial.enc_seed,
+    aliceChallenge.pinSalt,
+    aliceChallenge.authSalt,
+    aliceChallenge.wrapperSalt,
+    aliceMaterial.encSeed,
     aliceCid,
-    bobPublicKeyResult.public_key
+    bobPublicKeyResult.publicKey
   );
 
   // Bob creates shared key with Alice's public key
-  const bobSharedKey = create_shared_key(
+  const bobSharedKey = createSharedKey(
     bobSignature,
     bobPin,
-    bobChallenge.pin_salt,
-    bobChallenge.auth_salt,
-    bobChallenge.wrapper_salt,
-    bobMaterial.enc_seed,
+    bobChallenge.pinSalt,
+    bobChallenge.authSalt,
+    bobChallenge.wrapperSalt,
+    bobMaterial.encSeed,
     bobCid,
-    alicePublicKeyResult.public_key
+    alicePublicKeyResult.publicKey
   );
 
-  console.log("✓ Alice's shared key:", aliceSharedKey.shared_key);
-  console.log("✓ Bob's shared key:", bobSharedKey.shared_key);
+  console.log("✓ Alice's shared key:", aliceSharedKey.sharedKey);
+  console.log("✓ Bob's shared key:", bobSharedKey.sharedKey);
 
   // Verify both parties computed the same shared key
-  if (aliceSharedKey.shared_key === bobSharedKey.shared_key) {
+  if (aliceSharedKey.sharedKey === bobSharedKey.sharedKey) {
     console.log(
       "✅ Key exchange successful! Both parties have the same shared key"
     );
@@ -298,18 +298,18 @@ async function testKeyExchange() {
   console.log("\n🧪 Testing key exchange consistency...");
 
   // Test that the same inputs always produce the same shared key
-  const aliceSharedKey2 = create_shared_key(
+  const aliceSharedKey2 = createSharedKey(
     aliceSignature,
     alicePin,
-    aliceChallenge.pin_salt,
-    aliceChallenge.auth_salt,
-    aliceChallenge.wrapper_salt,
-    aliceMaterial.enc_seed,
+    aliceChallenge.pinSalt,
+    aliceChallenge.authSalt,
+    aliceChallenge.wrapperSalt,
+    aliceMaterial.encSeed,
     aliceCid,
-    bobPublicKeyResult.public_key
+    bobPublicKeyResult.publicKey
   );
 
-  if (aliceSharedKey.shared_key === aliceSharedKey2.shared_key) {
+  if (aliceSharedKey.sharedKey === aliceSharedKey2.sharedKey) {
     console.log("✅ Shared key generation is deterministic");
   } else {
     console.log("❌ Shared key generation is not deterministic");
@@ -320,18 +320,18 @@ async function testKeyExchange() {
     "\n🎯 Testing with different CIDs (should produce different shared keys)..."
   );
 
-  const aliceSharedKeyDifferentCid = create_shared_key(
+  const aliceSharedKeyDifferentCid = createSharedKey(
     aliceSignature,
     alicePin,
-    aliceChallenge.pin_salt,
-    aliceChallenge.auth_salt,
-    aliceChallenge.wrapper_salt,
-    aliceMaterial.enc_seed,
+    aliceChallenge.pinSalt,
+    aliceChallenge.authSalt,
+    aliceChallenge.wrapperSalt,
+    aliceMaterial.encSeed,
     "different_cid", // Different CID
-    bobPublicKeyResult.public_key
+    bobPublicKeyResult.publicKey
   );
 
-  if (aliceSharedKey.shared_key !== aliceSharedKeyDifferentCid.shared_key) {
+  if (aliceSharedKey.sharedKey !== aliceSharedKeyDifferentCid.sharedKey) {
     console.log(
       "✅ Different CIDs produce different shared keys (as expected)"
     );
@@ -347,18 +347,18 @@ async function testKeyExchange() {
 async function testStandaloneKeyPairs() {
   console.log("🗝️  Testing Standalone Key Pair Generation...\n");
 
-  const keyPair1 = generate_key_pair();
-  const keyPair2 = generate_key_pair();
+  const keyPair1 = generateKeyPair();
+  const keyPair2 = generateKeyPair();
 
-  console.log("✓ Key Pair 1 - Private:", keyPair1.private_key);
-  console.log("✓ Key Pair 1 - Public:", keyPair1.public_key);
-  console.log("✓ Key Pair 2 - Private:", keyPair2.private_key);
-  console.log("✓ Key Pair 2 - Public:", keyPair2.public_key);
+  console.log("✓ Key Pair 1 - Private:", keyPair1.privateKey);
+  console.log("✓ Key Pair 1 - Public:", keyPair1.publicKey);
+  console.log("✓ Key Pair 2 - Private:", keyPair2.privateKey);
+  console.log("✓ Key Pair 2 - Public:", keyPair2.publicKey);
 
   // Verify key pairs are different
   if (
-    keyPair1.private_key !== keyPair2.private_key &&
-    keyPair1.public_key !== keyPair2.public_key
+    keyPair1.privateKey !== keyPair2.privateKey &&
+    keyPair1.publicKey !== keyPair2.publicKey
   ) {
     console.log("✅ Key pairs are properly randomized\n");
     return true;
@@ -371,8 +371,8 @@ async function testStandaloneKeyPairs() {
 async function testSaltGeneration() {
   console.log("🧂 Testing Salt Generation...\n");
   // Length test
-  const s16 = generate_salt(16);
-  const s32 = generate_salt(32);
+  const s16 = generateSalt(16);
+  const s32 = generateSalt(32);
   if (typeof s16 !== "string" || typeof s32 !== "string") {
     console.log("❌ Salt not returned as string");
     return false;
@@ -384,14 +384,14 @@ async function testSaltGeneration() {
     console.log("❌ Salt lengths incorrect", b16.length, b32.length);
     return false;
   }
-  if (s16 === s32 || s16 === generate_salt(16)) {
+  if (s16 === s32 || s16 === generateSalt(16)) {
     console.log("❌ Salts should be random");
     return false;
   }
   // Error handling (invalid length)
   let threw = false;
   try {
-    generate_salt(0);
+    generateSalt(0);
   } catch {
     threw = true;
   }
