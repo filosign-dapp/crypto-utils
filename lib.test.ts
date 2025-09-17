@@ -24,27 +24,18 @@ describe("FiloSign Crypto Utils", () => {
       const address = "0x1234567890abcdef";
       const version = "1";
 
-      // Generate salts and nonce
-      const salts1 = generateSalts();
       const nonce1 = generateNonce();
-      const salts2 = generateSalts();
       const nonce2 = generateNonce();
 
       const challengeResult1 = generateRegisterChallenge(
         address,
         version,
-        nonce1,
-        salts1.pinSalt,
-        salts1.authSalt,
-        salts1.wrapperSalt
+        nonce1
       );
       const challengeResult2 = generateRegisterChallenge(
         address,
         version,
-        nonce2,
-        salts2.pinSalt,
-        salts2.authSalt,
-        salts2.wrapperSalt
+        nonce2
       );
 
       expect(challengeResult1.challenge).toBeDefined();
@@ -203,10 +194,7 @@ describe("FiloSign Crypto Utils", () => {
       const aliceChallenge = generateRegisterChallenge(
         aliceAddress,
         version,
-        aliceNonce,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt
+        aliceNonce
       );
       const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
       const alicePin = "1234";
@@ -215,9 +203,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceMaterial = deriveEncryptionMaterial(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceCid
       );
 
@@ -227,10 +215,7 @@ describe("FiloSign Crypto Utils", () => {
       const bobChallenge = generateRegisterChallenge(
         bobAddress,
         version,
-        bobNonce,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt
+        bobNonce
       );
       const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
       const bobPin = "5678";
@@ -239,9 +224,9 @@ describe("FiloSign Crypto Utils", () => {
       const bobMaterial = deriveEncryptionMaterial(
         bobSignature,
         bobPin,
-        bobChallenge.pinSalt,
-        bobChallenge.authSalt,
-        bobChallenge.wrapperSalt,
+        bobSalts.pinSalt,
+        bobSalts.authSalt,
+        bobSalts.wrapperSalt,
         bobCid
       );
 
@@ -249,9 +234,9 @@ describe("FiloSign Crypto Utils", () => {
       const alicePublicKeyResult = getPublicKeyFromEncryptionKey(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceMaterial.encSeed,
         aliceCid
       );
@@ -259,9 +244,9 @@ describe("FiloSign Crypto Utils", () => {
       const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
         bobSignature,
         bobPin,
-        bobChallenge.pinSalt,
-        bobChallenge.authSalt,
-        bobChallenge.wrapperSalt,
+        bobSalts.pinSalt,
+        bobSalts.authSalt,
+        bobSalts.wrapperSalt,
         bobMaterial.encSeed,
         bobCid
       );
@@ -273,9 +258,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceSharedKey = createSharedKey(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceMaterial.encSeed,
         aliceCid,
         bobPublicKeyResult.publicKey
@@ -284,9 +269,9 @@ describe("FiloSign Crypto Utils", () => {
       const bobSharedKey = createSharedKey(
         bobSignature,
         bobPin,
-        bobChallenge.pinSalt,
-        bobChallenge.authSalt,
-        bobChallenge.wrapperSalt,
+        bobSalts.pinSalt,
+        bobSalts.authSalt,
+        bobSalts.wrapperSalt,
         bobMaterial.encSeed,
         bobCid,
         alicePublicKeyResult.publicKey
@@ -306,10 +291,7 @@ describe("FiloSign Crypto Utils", () => {
       const aliceChallenge = generateRegisterChallenge(
         aliceAddress,
         version,
-        aliceNonce,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt
+        aliceNonce
       );
       const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
       const alicePin = "1234";
@@ -318,9 +300,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceMaterial = deriveEncryptionMaterial(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceCid
       );
 
@@ -329,10 +311,7 @@ describe("FiloSign Crypto Utils", () => {
       const bobChallenge = generateRegisterChallenge(
         bobAddress,
         version,
-        bobNonce,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt
+        bobNonce
       );
       const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
       const bobPin = "5678";
@@ -341,18 +320,18 @@ describe("FiloSign Crypto Utils", () => {
       const bobMaterial = deriveEncryptionMaterial(
         bobSignature,
         bobPin,
-        bobChallenge.pinSalt,
-        bobChallenge.authSalt,
-        bobChallenge.wrapperSalt,
+        bobSalts.pinSalt,
+        bobSalts.authSalt,
+        bobSalts.wrapperSalt,
         bobCid
       );
 
       const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
         bobSignature,
         bobPin,
-        bobChallenge.pinSalt,
-        bobChallenge.authSalt,
-        bobChallenge.wrapperSalt,
+        bobSalts.pinSalt,
+        bobSalts.authSalt,
+        bobSalts.wrapperSalt,
         bobMaterial.encSeed,
         bobCid
       );
@@ -361,9 +340,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceSharedKey1 = createSharedKey(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceMaterial.encSeed,
         aliceCid,
         bobPublicKeyResult.publicKey
@@ -372,9 +351,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceSharedKey2 = createSharedKey(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceMaterial.encSeed,
         aliceCid,
         bobPublicKeyResult.publicKey
@@ -394,10 +373,7 @@ describe("FiloSign Crypto Utils", () => {
       const aliceChallenge = generateRegisterChallenge(
         aliceAddress,
         version,
-        aliceNonce,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt
+        aliceNonce
       );
       const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
       const alicePin = "1234";
@@ -406,9 +382,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceMaterial = deriveEncryptionMaterial(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceCid
       );
 
@@ -417,10 +393,7 @@ describe("FiloSign Crypto Utils", () => {
       const bobChallenge = generateRegisterChallenge(
         bobAddress,
         version,
-        bobNonce,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt
+        bobNonce
       );
       const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
       const bobPin = "5678";
@@ -429,18 +402,18 @@ describe("FiloSign Crypto Utils", () => {
       const bobMaterial = deriveEncryptionMaterial(
         bobSignature,
         bobPin,
-        bobChallenge.pinSalt,
-        bobChallenge.authSalt,
-        bobChallenge.wrapperSalt,
+        bobSalts.pinSalt,
+        bobSalts.authSalt,
+        bobSalts.wrapperSalt,
         bobCid
       );
 
       const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
         bobSignature,
         bobPin,
-        bobChallenge.pinSalt,
-        bobChallenge.authSalt,
-        bobChallenge.wrapperSalt,
+        bobSalts.pinSalt,
+        bobSalts.authSalt,
+        bobSalts.wrapperSalt,
         bobMaterial.encSeed,
         bobCid
       );
@@ -448,9 +421,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceSharedKey = createSharedKey(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceMaterial.encSeed,
         aliceCid,
         bobPublicKeyResult.publicKey
@@ -459,9 +432,9 @@ describe("FiloSign Crypto Utils", () => {
       const aliceSharedKeyDifferentCid = createSharedKey(
         aliceSignature,
         alicePin,
-        aliceChallenge.pinSalt,
-        aliceChallenge.authSalt,
-        aliceChallenge.wrapperSalt,
+        aliceSalts.pinSalt,
+        aliceSalts.authSalt,
+        aliceSalts.wrapperSalt,
         aliceMaterial.encSeed,
         "different_cid",
         bobPublicKeyResult.publicKey

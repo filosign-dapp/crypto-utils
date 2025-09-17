@@ -37,10 +37,6 @@ export function getPublicKeyFromEncryptionKey(
 
 export interface RegisterChallengeResult {
   challenge: string;
-  pinSalt: string;
-  authSalt: string;
-  wrapperSalt: string;
-  nonce: string;
 }
 
 export interface EncryptionMaterialResult {
@@ -88,29 +84,15 @@ export function generateNonce(): string {
 export function generateRegisterChallenge(
   address: string,
   version: string,
-  nonceB64: string,
-  pinSaltB64: string,
-  authSaltB64: string,
-  wrapperSaltB64: string
+  nonceB64: string
 ): RegisterChallengeResult {
-  const res = wasm.generate_register_challenge(
-    address,
-    version,
-    nonceB64,
-    pinSaltB64,
-    authSaltB64,
-    wrapperSaltB64
-  );
+  const res = wasm.generate_register_challenge(address, version, nonceB64);
   if (!res || typeof res !== "object") {
     throw new Error("generateRegisterChallenge: invalid result");
   }
   const result = res as any;
   return {
     challenge: result.challenge,
-    pinSalt: result.pin_salt,
-    authSalt: result.auth_salt,
-    wrapperSalt: result.wrapper_salt,
-    nonce: result.nonce,
   };
 }
 

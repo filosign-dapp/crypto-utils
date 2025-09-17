@@ -36,10 +36,6 @@ struct SaltsResult {
 #[derive(Serialize)]
 struct RegisterChallenge {
   challenge: String,
-  nonce: String,
-  pin_salt: String,
-  auth_salt: String,
-  wrapper_salt: String,
 }
 
 #[wasm_bindgen]
@@ -68,16 +64,12 @@ pub fn generate_nonce() -> String {
 }
 
 #[wasm_bindgen]
-pub fn generate_register_challenge(address: &str, version: &str, nonce_b64: &str, pin_salt_b64: &str, auth_salt_b64: &str, wrapper_salt_b64: &str) -> JsValue {
+pub fn generate_register_challenge(address: &str, version: &str, nonce_b64: &str) -> JsValue {
   let nonce = general_purpose::STANDARD.decode(nonce_b64).expect("bad nonce base64");
   
   let challenge = format!("filosign:v{}:{}:{}", version, address, hex::encode(&nonce));
   let rc = RegisterChallenge {
-    challenge,
-    nonce: nonce_b64.to_string(),
-    pin_salt: pin_salt_b64.to_string(),
-    auth_salt: auth_salt_b64.to_string(),
-    wrapper_salt: wrapper_salt_b64.to_string(),
+    challenge
   };
   serde_wasm_bindgen::to_value(&rc).unwrap()
 }
