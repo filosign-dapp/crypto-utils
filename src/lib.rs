@@ -7,6 +7,7 @@ use chacha20poly1305::{XChaCha20Poly1305, aead::{Aead, KeyInit}, XNonce};
 use base64::{engine::general_purpose, Engine as _};
 use zeroize::Zeroize;
 use serde::Serialize;
+use hex;
 use p256::{
     PublicKey, 
     elliptic_curve::{
