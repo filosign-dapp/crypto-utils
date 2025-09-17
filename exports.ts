@@ -8,7 +8,7 @@ export function getPublicKeyFromEncryptionKey(
   authSaltB64: string,
   wrapperSaltB64: string,
   encSeedB64: string,
-  info: string
+  cid: string
 ): { publicKey: string } {
   const res = wasm.get_public_key_from_regenerated(
     signatureB64,
@@ -17,7 +17,7 @@ export function getPublicKeyFromEncryptionKey(
     authSaltB64,
     wrapperSaltB64,
     encSeedB64,
-    info
+    cid
   );
   let public_key: unknown = undefined;
   if (res && typeof res === "object") {
@@ -62,11 +62,45 @@ export interface SharedKeyResult {
   sharedKey: string;
 }
 
+export interface SaltsResult {
+  pinSalt: string;
+  authSalt: string;
+  wrapperSalt: string;
+}
+
+export function generateSalts(): SaltsResult {
+  const res = wasm.generate_salts();
+  if (!res || typeof res !== "object") {
+    throw new Error("generateSalts: invalid result");
+  }
+  const result = res as any;
+  return {
+    pinSalt: result.pin_salt,
+    authSalt: result.auth_salt,
+    wrapperSalt: result.wrapper_salt,
+  };
+}
+
+export function generateNonce(): string {
+  return wasm.generate_nonce();
+}
+
 export function generateRegisterChallenge(
   address: string,
-  version: string
+  version: string,
+  nonceB64: string,
+  pinSaltB64: string,
+  authSaltB64: string,
+  wrapperSaltB64: string
 ): RegisterChallengeResult {
-  const res = wasm.generate_register_challenge(address, version);
+  const res = wasm.generate_register_challenge(
+    address,
+    version,
+    nonceB64,
+    pinSaltB64,
+    authSaltB64,
+    wrapperSaltB64
+  );
   if (!res || typeof res !== "object") {
     throw new Error("generateRegisterChallenge: invalid result");
   }
@@ -182,7 +216,7 @@ export function getPublicKeyFromRegenerated(
   authSaltB64: string,
   wrapperSaltB64: string,
   encSeedB64: string,
-  info: string
+  cid: string
 ): { publicKey: string } {
   const res = wasm.get_public_key_from_regenerated(
     signatureB64,
@@ -191,7 +225,7 @@ export function getPublicKeyFromRegenerated(
     authSaltB64,
     wrapperSaltB64,
     encSeedB64,
-    info
+    cid
   );
   let public_key: unknown = undefined;
   if (res && typeof res === "object") {

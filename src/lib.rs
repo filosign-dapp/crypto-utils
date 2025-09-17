@@ -27,6 +27,13 @@ struct PublicKeyResult {
 }
 
 #[derive(Serialize)]
+struct SaltsResult {
+  pin_salt: String,
+  auth_salt: String,
+  wrapper_salt: String,
+}
+
+#[derive(Serialize)]
 struct RegisterChallenge {
   challenge: String,
   nonce: String,
@@ -36,24 +43,41 @@ struct RegisterChallenge {
 }
 
 #[wasm_bindgen]
-pub fn generate_register_challenge(address: &str, version: &str) -> JsValue {
-  let mut nonce = [0u8; 32];
+pub fn generate_salts() -> JsValue {
   let mut pin_salt = [0u8; 32];
   let mut auth_salt = [0u8; 32];
   let mut wrapper_salt = [0u8; 32];
 
-  generate_salt_internal(&mut nonce);
   generate_salt_internal(&mut pin_salt);
   generate_salt_internal(&mut auth_salt);
   generate_salt_internal(&mut wrapper_salt);
 
-  let challenge = format!("filosign:v{}:{}:{}", version, address, hex::encode(nonce));
-  let rc = RegisterChallenge {
-    challenge,
-    nonce: general_purpose::STANDARD.encode(&nonce),
+  let salts = SaltsResult {
     pin_salt: general_purpose::STANDARD.encode(&pin_salt),
     auth_salt: general_purpose::STANDARD.encode(&auth_salt),
     wrapper_salt: general_purpose::STANDARD.encode(&wrapper_salt),
+  };
+  serde_wasm_bindgen::to_value(&salts).unwrap()
+}
+
+#[wasm_bindgen]
+pub fn generate_nonce() -> String {
+  let mut nonce = [0u8; 32];
+  generate_salt_internal(&mut nonce);
+  general_purpose::STANDARD.encode(&nonce)
+}
+
+#[wasm_bindgen]
+pub fn generate_register_challenge(address: &str, version: &str, nonce_b64: &str, pin_salt_b64: &str, auth_salt_b64: &str, wrapper_salt_b64: &str) -> JsValue {
+  let nonce = general_purpose::STANDARD.decode(nonce_b64).expect("bad nonce base64");
+  
+  let challenge = format!("filosign:v{}:{}:{}", version, address, hex::encode(&nonce));
+  let rc = RegisterChallenge {
+    challenge,
+    nonce: nonce_b64.to_string(),
+    pin_salt: pin_salt_b64.to_string(),
+    auth_salt: auth_salt_b64.to_string(),
+    wrapper_salt: wrapper_salt_b64.to_string(),
   };
   serde_wasm_bindgen::to_value(&rc).unwrap()
 }
