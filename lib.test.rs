@@ -8,12 +8,6 @@ import {
   generateSalt,
   generateSalts,
   generateNonce,
-  type RegisterChallengeResult,
-  type EncryptionMaterialResult,
-  type RegenerateKeyResult,
-  type KeyPairResult,
-  type SharedKeyResult,
-  type SaltsResult,
 } from "./exports";
 
 import { describe, it, expect } from "bun:test";
