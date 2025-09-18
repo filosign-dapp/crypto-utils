@@ -66,7 +66,13 @@ pub fn generate_nonce() -> String {
 
 #[wasm_bindgen]
 pub fn generate_register_challenge(address: &str, version: &str, nonce_b64: &str) -> JsValue {
-  let nonce = general_purpose::STANDARD.decode(nonce_b64).expect("bad nonce base64");
+  let nonce = match general_purpose::STANDARD.decode(nonce_b64) {
+    Ok(n) => n,
+    Err(_) => {
+      let error = serde_json::json!({"error": "Invalid base64 nonce"});
+      return serde_wasm_bindgen::to_value(&error).unwrap();
+    }
+  };
   
   let challenge = format!("filosign:v{}:{}:{}", version, address, hex::encode(&nonce));
   let rc = RegisterChallenge {
@@ -354,4 +360,15 @@ pub fn generate_salt(len: u32) -> String {
 pub fn to_hex(b64: &str) -> String {
   let bytes = general_purpose::STANDARD.decode(b64).expect("invalid base64");
   hex::encode(bytes)
+}
+
+#[wasm_bindgen]
+pub fn to_b64(hex_str: &str) -> String {
+  let cleaned_hex = if hex_str.starts_with("0x") || hex_str.starts_with("0X") {
+    &hex_str[2..]
+  } else {
+    hex_str
+  };
+  let bytes = hex::decode(cleaned_hex).expect("invalid hex");
+  general_purpose::STANDARD.encode(bytes)
 }

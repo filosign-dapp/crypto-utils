@@ -232,3 +232,7 @@ export function generateSalt(len: number): string {
 export function toHex(b64: string): string {
   return wasm.to_hex(b64);
 }
+
+export function toB64(hexStr: string): string {
+  return wasm.to_b64(hexStr);
+}
