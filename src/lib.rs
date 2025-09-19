@@ -259,35 +259,13 @@ struct SharedKeyResult {
 
 #[wasm_bindgen]
 pub fn create_shared_key(
-  signature_b64: &str, 
-  pin: &str, 
-  pin_salt_b64: &str, 
-  auth_salt_b64: &str, 
-  wrapper_salt_b64: &str, 
-  enc_seed_b64: &str, 
-  info: &str,
+  self_private_key_b64: &str,
   other_public_key_b64: &str
 ) -> JsValue {
-  
-  let regen_result = regenerate_encryption_key(
-    signature_b64, 
-    pin, 
-    pin_salt_b64, 
-    auth_salt_b64, 
-    wrapper_salt_b64, 
-    enc_seed_b64, 
-    info
-  );
-  
-  
-  let regen_obj: serde_json::Value = serde_wasm_bindgen::from_value(regen_result).expect("parse regen result");
-  let encryption_key_b64 = regen_obj["encryption_key"].as_str().expect("get encryption_key");
-  let encryption_key = general_purpose::STANDARD.decode(encryption_key_b64).expect("decode encryption_key");
-  
-  
-  let private_key_bytes: [u8; 32] = encryption_key.try_into().expect("encryption key to 32 bytes");
-  let private_key = SecretKey::from_bytes(&private_key_bytes.into()).expect("create private key");
-  
+  let private_key_bytes = general_purpose::STANDARD.decode(self_private_key_b64).expect("decode private key");
+  let private_key_array: [u8; 32] = private_key_bytes.try_into().expect("private key bytes to 32 bytes");
+  let private_key = SecretKey::from_bytes(&private_key_array.into()).expect("create private key");
+
   
   let other_public_key_bytes = general_purpose::STANDARD.decode(other_public_key_b64).expect("decode other public key");
   let other_public_key = PublicKey::from_sec1_bytes(&other_public_key_bytes).expect("create public key");

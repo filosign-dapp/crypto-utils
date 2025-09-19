@@ -163,25 +163,10 @@ export function generateKeyPair(): KeyPairResult {
 }
 
 export function createSharedKey(
-  signatureB64: string,
-  pin: string,
-  pinSaltB64: string,
-  authSaltB64: string,
-  wrapperSaltB64: string,
-  encSeedB64: string,
-  info: string,
+  selfPrivateKeyB64: string,
   otherPublicKeyB64: string
 ): SharedKeyResult {
-  const res = wasm.create_shared_key(
-    signatureB64,
-    pin,
-    pinSaltB64,
-    authSaltB64,
-    wrapperSaltB64,
-    encSeedB64,
-    info,
-    otherPublicKeyB64
-  );
+  const res = wasm.create_shared_key(selfPrivateKeyB64, otherPublicKeyB64);
   if (!res || typeof res !== "object") {
     throw new Error("createSharedKey: invalid result");
   }

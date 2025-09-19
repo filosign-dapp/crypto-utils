@@ -250,24 +250,12 @@ describe("FiloSign Crypto Utils", () => {
 
       // Create shared keys
       const aliceSharedKey = createSharedKey(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceMaterial.encSeed,
-        aliceCid,
+        aliceMaterial.encryptionKey,
         bobPublicKeyResult.publicKey
       );
 
       const bobSharedKey = createSharedKey(
-        bobSignature,
-        bobPin,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt,
-        bobMaterial.encSeed,
-        bobCid,
+        bobMaterial.encryptionKey,
         alicePublicKeyResult.publicKey
       );
 
@@ -332,112 +320,88 @@ describe("FiloSign Crypto Utils", () => {
 
       // Test that the same inputs always produce the same shared key
       const aliceSharedKey1 = createSharedKey(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceMaterial.encSeed,
-        aliceCid,
+        aliceMaterial.encryptionKey,
         bobPublicKeyResult.publicKey
       );
 
       const aliceSharedKey2 = createSharedKey(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceMaterial.encSeed,
-        aliceCid,
+        aliceMaterial.encryptionKey,
         bobPublicKeyResult.publicKey
       );
 
       expect(aliceSharedKey1.sharedKey).toBe(aliceSharedKey2.sharedKey);
     });
 
-    it("should produce different shared keys with different CIDs", () => {
-      const aliceAddress = "0x1111111111111111";
-      const bobAddress = "0x2222222222222222";
-      const version = "1";
+    // it("should produce different shared keys with different CIDs", () => {
+    //   const aliceAddress = "0x1111111111111111";
+    //   const bobAddress = "0x2222222222222222";
+    //   const version = "1";
 
-      // Setup (simplified)
-      const aliceSalts = generateSalts();
-      const aliceNonce = generateNonce();
-      const aliceChallenge = generateRegisterChallenge(
-        aliceAddress,
-        version,
-        aliceNonce
-      );
-      const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
-      const alicePin = "1234";
-      const aliceCid = "alice_cid";
+    //   // Setup (simplified)
+    //   const aliceSalts = generateSalts();
+    //   const aliceNonce = generateNonce();
+    //   const aliceChallenge = generateRegisterChallenge(
+    //     aliceAddress,
+    //     version,
+    //     aliceNonce
+    //   );
+    //   const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
+    //   const alicePin = "1234";
+    //   const aliceCid = "alice_cid";
 
-      const aliceMaterial = deriveEncryptionMaterial(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceCid
-      );
+    //   const aliceMaterial = deriveEncryptionMaterial(
+    //     aliceSignature,
+    //     alicePin,
+    //     aliceSalts.pinSalt,
+    //     aliceSalts.authSalt,
+    //     aliceSalts.wrapperSalt,
+    //     aliceCid
+    //   );
 
-      const bobSalts = generateSalts();
-      const bobNonce = generateNonce();
-      const bobChallenge = generateRegisterChallenge(
-        bobAddress,
-        version,
-        bobNonce
-      );
-      const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
-      const bobPin = "5678";
-      const bobCid = "bob_cid";
+    //   const bobSalts = generateSalts();
+    //   const bobNonce = generateNonce();
+    //   const bobChallenge = generateRegisterChallenge(
+    //     bobAddress,
+    //     version,
+    //     bobNonce
+    //   );
+    //   const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
+    //   const bobPin = "5678";
+    //   const bobCid = "bob_cid";
 
-      const bobMaterial = deriveEncryptionMaterial(
-        bobSignature,
-        bobPin,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt,
-        bobCid
-      );
+    //   const bobMaterial = deriveEncryptionMaterial(
+    //     bobSignature,
+    //     bobPin,
+    //     bobSalts.pinSalt,
+    //     bobSalts.authSalt,
+    //     bobSalts.wrapperSalt,
+    //     bobCid
+    //   );
 
-      const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
-        bobSignature,
-        bobPin,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt,
-        bobMaterial.encSeed,
-        bobCid
-      );
+    //   const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
+    //     bobSignature,
+    //     bobPin,
+    //     bobSalts.pinSalt,
+    //     bobSalts.authSalt,
+    //     bobSalts.wrapperSalt,
+    //     bobMaterial.encSeed,
+    //     bobCid
+    //   );
 
-      const aliceSharedKey = createSharedKey(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceMaterial.encSeed,
-        aliceCid,
-        bobPublicKeyResult.publicKey
-      );
+    //   const aliceSharedKey = createSharedKey(
+    //     aliceMaterial.encryptionKey,
+    //     bobPublicKeyResult.publicKey
+    //   );
 
-      const aliceSharedKeyDifferentCid = createSharedKey(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceMaterial.encSeed,
-        "different_cid",
-        bobPublicKeyResult.publicKey
-      );
+    //   const aliceSharedKeyDifferentCid = createSharedKey(
+    //     aliceMaterial.encryptionKey,
+    //     bobPublicKeyResult.publicKey
+    //   );
 
-      expect(aliceSharedKey.sharedKey).not.toBe(
-        aliceSharedKeyDifferentCid.sharedKey
-      );
-    });
+    //   expect(aliceSharedKey.sharedKey).not.toBe(
+    //     aliceSharedKeyDifferentCid.sharedKey
+    //   );
+    // });
   });
 
   describe("Key Pair Generation", () => {
