@@ -1,6 +1,6 @@
-# FiloSign Crypto Utils
+# Filosign Crypto Utils
 
-WebAssembly-based cryptographic utilities designed specifically for FiloSign.
+High-performance WebAssembly cryptographic utilities powering the Filosign decentralized e-signature platform. Provides secure key derivation, encryption, and digital signature operations for blockchain-based document signing.
 
 ## Installation
 
@@ -20,85 +20,78 @@ bun add filosign-crypto-utils
 bun add git+https://github.com/filosign-dapp/crypto-utils.git
 ```
 
-## Usage
+## Filosign Integration
 
+Crypto Utils powers the cryptographic operations in Filosign's decentralized e-signature workflow:
+
+### User Registration Flow
 ```typescript
-import {
-  generateRegisterChallenge,
-  deriveEncryptionMaterial,
-  regenerateEncryptionKey,
-  generateKeyPair,
-  createSharedKey,
-  getPublicKeyFromEncryptionKey,
-  getPublicKeyFromRegenerated,
-  generateSalts,
-  generateNonce,
-  generateSalt,
-  toHex,
-  toB64,
-  type RegisterChallengeResult,
-  type EncryptionMaterialResult,
-  type RegenerateKeyResult,
-  type KeyPairResult,
-  type SharedKeyResult,
-  type SaltsResult,
-} from "filosign-crypto-utils";
+import { generateSalts, generateNonce, generateRegisterChallenge, deriveEncryptionMaterial } from "filosign-crypto-utils";
 
-// Generate salts for registration
-const salts = generateSalts();
+// Step 1: Generate cryptographic salts
+const salts = generateSalts(); // PIN, auth, and wrapper salts
 
-// Generate a nonce for challenge
+// Step 2: Create registration challenge
 const nonce = generateNonce();
+const challenge = generateRegisterChallenge(
+  userAddress,
+  version.toString(),
+  nonce
+);
 
-// Generate a registration challenge
-const challenge = generateRegisterChallenge("0x1234...", "1", nonce);
+// Step 3: User signs challenge with wallet
+const signature = await wallet.signMessage({ message: challenge.challenge });
 
-// Derive encryption material
+// Step 4: Derive encryption material from PIN + signature
 const material = deriveEncryptionMaterial(
-  signatureB64,
-  pin,
+  signature,
+  userPin,
   salts.pinSalt,
   salts.authSalt,
   salts.wrapperSalt,
-  "info-context"
+  "filosign-encryption"
+);
+```
+
+### Authentication & Key Regeneration
+```typescript
+import { regenerateEncryptionKey, getPublicKeyFromRegenerated } from "filosign-crypto-utils";
+
+// Regenerate encryption key for session (login)
+const { encryptionKey } = regenerateEncryptionKey(
+  signature,
+  userPin,
+  pinSalt,
+  authSalt,
+  wrapperSalt,
+  encryptedSeed,
+  "filosign-encryption"
 );
 
-// Regenerate encryption key
-const key = regenerateEncryptionKey(
-  signatureB64,
-  pin,
-  salts.pinSalt,
-  salts.authSalt,
-  salts.wrapperSalt,
-  material.encSeed,
-  "info-context"
+// Extract public key for blockchain registration
+const { publicKey } = getPublicKeyFromRegenerated(
+  signature,
+  userPin,
+  pinSalt,
+  authSalt,
+  wrapperSalt,
+  encryptedSeed,
+  "filosign-encryption"
+);
+```
+
+### Secure Document Exchange
+```typescript
+import { createSharedKey } from "filosign-crypto-utils";
+
+// Create shared encryption key for secure communication
+const { sharedKey } = createSharedKey(
+  myPrivateKey,
+  recipientPublicKey
 );
 
-// Get public key from encryption material (for key exchange)
-const publicKeyResult = getPublicKeyFromEncryptionKey(
-  signatureB64,
-  pin,
-  salts.pinSalt,
-  salts.authSalt,
-  salts.wrapperSalt,
-  material.encSeed,
-  "info-context"
-);
-
-// Create shared key with another party's public key
-const sharedKey = createSharedKey(
-  signatureB64,
-  pin,
-  salts.pinSalt,
-  salts.authSalt,
-  salts.wrapperSalt,
-  material.encSeed,
-  "info-context",
-  otherPartyPublicKey
-);
-
-// Generate standalone key pairs (optional)
-const keyPair = generateKeyPair();
+// Use sharedKey with AES-GCM for document encryption
+const encryptedDocument = await encryptDocument(document, sharedKey);
 ```
 
 ## API
@@ -135,7 +128,7 @@ Extracts a public key from your encryption material for key exchange.
 
 Gets a public key from regenerated encryption material.
 
-#### `createSharedKey(signatureB64: string, pin: string, pinSaltB64: string, authSaltB64: string, wrapperSaltB64: string, encSeedB64: string, info: string, otherPublicKeyB64: string): SharedKeyResult`
+#### `createSharedKey(selfPrivateKeyB64: string, otherPublicKeyB64: string): SharedKeyResult`
 
 Creates a shared encryption key between two parties using ECDH key exchange.
 
@@ -155,7 +148,7 @@ Converts a base64 string to hexadecimal.
 
 #### `toB64(hexStr: string): string`
 
-Converts a hexadecimal string to base64.
+Converts a hexadecimal string to base64. Supports both prefixed (0x) and non-prefixed hex strings.
 
 ### Key Exchange Workflow
 
@@ -167,12 +160,54 @@ Converts a hexadecimal string to base64.
 6. **Both parties** create the same shared key using `createSharedKey` with the other's public key
 7. **Encrypt/decrypt messages** using the shared key
 
+## Cryptographic Security Model
+
+### Key Derivation Hierarchy
+```
+User PIN → Argon2 → Authentication Key
+Authentication Key ⊕ PIN Key → Wrapper Key
+Wrapper Key → XChaCha20-Poly1305 Encryption of Seed
+Seed → HKDF → ECDSA Private Key + Encryption Keys
+```
+
+### Security Features
+- **Argon2id**: Memory-hard PIN hashing (65536 iterations, 3 lanes, 1 thread)
+- **XChaCha20-Poly1305**: Authenticated encryption for seed storage
+- **HKDF**: Secure key derivation for multiple purposes
+- **ECDH**: Ephemeral key exchange for document encryption
+- **Memory Zeroization**: Sensitive data cleared after use
+
+### Integration Architecture
+
+Crypto Utils integrates with Filosign's multi-layered security:
+
+1. **Client Layer**: WebAssembly cryptographic operations
+2. **Smart Contracts**: On-chain verification and storage
+3. **Decentralized Storage**: IPFS/Filecoin document storage
+4. **Wallet Integration**: MetaMask/WalletConnect signature verification
+
+## Performance
+
+- **WebAssembly**: Near-native performance for cryptographic operations
+- **Zero-copy Operations**: Efficient memory management
+- **Streaming Support**: Large file encryption capabilities
+
 ## Development
 
 ```bash
-# Build WASM package
-bun run build-node
+# Install dependencies
+bun install
+
+# Build WASM package for both web and Node.js targets
+bun run build
 
 # Run tests
 bun run test
+
+# Development workflow
+bun run build && bun run test
 ```
+
+## License
+
+AGPL-3.0-or-later
