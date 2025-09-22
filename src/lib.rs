@@ -241,8 +241,8 @@ pub fn generate_key_pair() -> JsValue {
   
   
   let private_bytes = secret_key.to_bytes();
-  let public_point = public_key.to_encoded_point(true); 
-  let public_bytes = public_point.as_bytes();
+  let public_point = public_key.to_encoded_point(false); 
+  let public_bytes = &public_point.as_bytes()[1..33]; 
   
   let res = KeyPairResult {
     private_key: general_purpose::STANDARD.encode(&private_bytes),
@@ -268,7 +268,16 @@ pub fn create_shared_key(
 
   
   let other_public_key_bytes = general_purpose::STANDARD.decode(other_public_key_b64).expect("decode other public key");
-  let other_public_key = PublicKey::from_sec1_bytes(&other_public_key_bytes).expect("create public key");
+  
+  let other_public_key = if other_public_key_bytes.len() == 32 {
+    
+    let mut full_key = vec![0x02u8]; 
+    full_key.extend_from_slice(&other_public_key_bytes);
+    PublicKey::from_sec1_bytes(&full_key).expect("create public key from x-coordinate")
+  } else {
+    
+    PublicKey::from_sec1_bytes(&other_public_key_bytes).expect("create public key")
+  };
   
   
   let shared_secret = diffie_hellman(
@@ -319,8 +328,9 @@ pub fn get_public_key_from_regenerated(
   let private_key = SecretKey::from_bytes(&private_key_bytes.into()).expect("create private key");
   let public_key = private_key.public_key();
   
-  let public_point = public_key.to_encoded_point(true); 
-  let res = PublicKeyResult { public_key: general_purpose::STANDARD.encode(public_point.as_bytes()) };
+  let public_point = public_key.to_encoded_point(false); 
+  let public_x_bytes = &public_point.as_bytes()[1..33]; 
+  let res = PublicKeyResult { public_key: general_purpose::STANDARD.encode(public_x_bytes) };
   serde_wasm_bindgen::to_value(&res).unwrap()
 }
 
