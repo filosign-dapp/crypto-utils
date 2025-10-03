@@ -16,7 +16,9 @@ export async function ensureWasmInitialized(wasmInput?: any) {
           const wasmModule = await import(
             "./pkg/filosign_crypto_utils_bg.wasm"
           );
-          await wasm.default(wasmModule.default);
+          if (wasmModule && wasmModule.default) {
+            await wasm.default(wasmModule.default);
+          }
         }
       } catch (e) {
         try {
