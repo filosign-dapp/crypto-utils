@@ -9,7 +9,13 @@ export async function ensureWasmInitialized() {
 
   initPromise = (async () => {
     if (typeof wasm.default === "function") {
-      await wasm.default();
+      try {
+        await wasm.default(
+          new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url)
+        );
+      } catch (e) {
+        await wasm.default();
+      }
     }
     wasmInitialized = true;
   })();
