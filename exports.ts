@@ -3,18 +3,34 @@ import * as wasm from "./pkg/filosign_crypto_utils.js";
 let wasmInitialized = false;
 let initPromise: Promise<void> | null = null;
 
-export async function ensureWasmInitialized() {
+export async function ensureWasmInitialized(wasmInput?: any) {
   if (wasmInitialized) return;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
     if (typeof wasm.default === "function") {
       try {
-        await wasm.default(
-          new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url)
-        );
+        if (wasmInput) {
+          await wasm.default(wasmInput);
+        } else {
+          const wasmModule = await import(
+            "./pkg/filosign_crypto_utils_bg.wasm"
+          );
+          await wasm.default(wasmModule.default);
+        }
       } catch (e) {
-        await wasm.default();
+        try {
+          await wasm.default(
+            new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url)
+          );
+        } catch (e2) {
+          try {
+            await wasm.default("./pkg/filosign_crypto_utils_bg.wasm");
+          } catch (e3) {
+            // Final fallback: let wasm-pack handle it
+            await wasm.default();
+          }
+        }
       }
     }
     wasmInitialized = true;

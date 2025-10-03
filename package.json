@@ -1,6 +1,6 @@
 {
     "name": "filosign-crypto-utils",
-    "version": "0.2.17",
+    "version": "0.2.18",
     "description": "Crypto utilities for FiloSign",
     "main": "exports.ts",
     "types": "exports.ts",
@@ -27,6 +27,6 @@
         "prepublishOnly": "npm run build"
     },
     "devDependencies": {
-        "@types/bun": "^1.2.21"
+        "@types/bun": "^1.2.23"
     }
 }

@@ -8,9 +8,12 @@ import {
   generateSalt,
   generateSalts,
   generateNonce,
+  ensureWasmInitialized,
 } from "./exports";
 
 import { describe, it, expect } from "bun:test";
+
+await ensureWasmInitialized();
 
 describe("FiloSign Crypto Utils", () => {
   describe("Basic Functionality", () => {
