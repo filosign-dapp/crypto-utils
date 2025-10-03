@@ -7,7 +7,7 @@
     "exports": {
         ".": {
             "import": "./exports.ts",
-            "require": "./pkg-node/filosign_crypto_utils.js",
+            "require": "./pkg/filosign_crypto_utils.js",
             "types": "./exports.ts"
         }
     },
