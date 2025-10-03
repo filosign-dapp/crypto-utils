@@ -1,4 +1,4 @@
-import * as wasm from "./pkg-node/filosign_crypto_utils.js";
+import * as wasm from "./pkg/filosign_crypto_utils.js";
 
 // Re-export with camelCase naming for JavaScript consumers
 export function getPublicKeyFromEncryptionKey(
