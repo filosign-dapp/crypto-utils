@@ -1,5 +1,22 @@
 import * as wasm from "./pkg/filosign_crypto_utils.js";
 
+let wasmInitialized = false;
+let initPromise: Promise<void> | null = null;
+
+export async function ensureWasmInitialized() {
+  if (wasmInitialized) return;
+  if (initPromise) return initPromise;
+
+  initPromise = (async () => {
+    if (typeof wasm.default === "function") {
+      await wasm.default();
+    }
+    wasmInitialized = true;
+  })();
+
+  return initPromise;
+}
+
 // Re-export with camelCase naming for JavaScript consumers
 export function getPublicKeyFromEncryptionKey(
   signatureB64: string,
