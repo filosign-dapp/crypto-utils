@@ -26,7 +26,7 @@ export async function ensureWasmInitialized(wasmInput?: any): Promise<void> {
     const environment = {
       hasImportMeta: typeof import.meta !== "undefined",
       hasImportMetaUrl: typeof import.meta !== "undefined" && !!import.meta.url,
-      // hasWindow: typeof window !== "undefined",
+      // hasWindow: typeof window !== 'undefined',
       hasGlobal: typeof (globalThis as any).global !== "undefined",
       hasProcess: typeof (globalThis as any).process !== "undefined",
       userAgent:
