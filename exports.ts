@@ -3,39 +3,100 @@ import * as wasm from "./pkg/filosign_crypto_utils.js";
 let wasmInitialized = false;
 let initPromise: Promise<void> | null = null;
 
-export async function ensureWasmInitialized(wasmInput?: any) {
+export async function ensureWasmInitialized(wasmInput?: any): Promise<void> {
   if (wasmInitialized) return;
   if (initPromise) return initPromise;
 
   initPromise = (async () => {
-    if (typeof wasm.default === "function") {
+    if (typeof wasm.default !== "function") {
+      throw new Error("WASM default export is not a function");
+    }
+
+    if (wasmInput) {
       try {
-        if (wasmInput) {
-          await wasm.default(wasmInput);
-        } else {
-          const wasmModule = await import(
-            "./pkg/filosign_crypto_utils_bg.wasm"
-          );
-          if (wasmModule && wasmModule) {
-            await wasm.default(wasmModule);
-          }
-        }
+        await wasm.default(wasmInput);
+        wasmInitialized = true;
+        return;
       } catch (e) {
-        try {
-          await wasm.default(
-            new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url)
-          );
-        } catch (e2) {
-          try {
-            await wasm.default("./pkg/filosign_crypto_utils_bg.wasm");
-          } catch (e3) {
-            // Final fallback: let wasm-pack handle it
-            await wasm.default();
-          }
-        }
+        throw new Error(`WASM initialization failed with provided input: ${e}`);
       }
     }
-    wasmInitialized = true;
+
+    const errors: string[] = [];
+    const environment = {
+      hasImportMeta: typeof import.meta !== 'undefined',
+      hasImportMetaUrl: typeof import.meta !== 'undefined' && !!import.meta.url,
+      hasWindow: typeof window !== 'undefined',
+      hasGlobal: typeof (globalThis as any).global !== 'undefined',
+      hasProcess: typeof (globalThis as any).process !== 'undefined',
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+    };
+    
+    try {
+      let wasmBytes: ArrayBuffer | undefined;
+      
+      if (environment.hasImportMetaUrl) {
+        try {
+          const wasmUrl = new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url);
+          const response = await fetch(wasmUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          wasmBytes = await response.arrayBuffer();
+        } catch (e) {
+          errors.push(`Manual fetch failed: ${e}`);
+        }
+      }
+
+      if (wasmBytes) {
+        await wasm.default(wasmBytes);
+        wasmInitialized = true;
+        return;
+      }
+
+      const wasmModule = await import("./pkg/filosign_crypto_utils_bg.wasm");
+      await wasm.default(wasmModule.default || wasmModule);
+      wasmInitialized = true;
+      return;
+    } catch (e) {
+      errors.push(`Dynamic import failed: ${e}`);
+    }
+
+    if (environment.hasImportMetaUrl) {
+      try {
+        const wasmUrl = new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url);
+        await wasm.default(wasmUrl);
+        wasmInitialized = true;
+        return;
+      } catch (e) {
+        errors.push(`URL-based loading failed: ${e}`);
+      }
+    }
+
+    try {
+      const wasmPath = "./pkg/filosign_crypto_utils_bg.wasm";
+      await wasm.default(wasmPath);
+      wasmInitialized = true;
+      return;
+    } catch (e) {
+      errors.push(`Path-based loading failed: ${e}`);
+    }
+
+    try {
+      await wasm.default();
+      wasmInitialized = true;
+      return;
+    } catch (e) {
+      errors.push(`Default initialization failed: ${e}`);
+    }
+
+    const errorMessage = [
+      `WASM initialization failed. All strategies failed.`,
+      `Environment: ${JSON.stringify(environment, null, 2)}`,
+      `Errors:\n${errors.join('\n')}`
+    ].join('\n');
+    
+    throw new Error(errorMessage);
   })();
 
   return initPromise;
