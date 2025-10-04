@@ -24,20 +24,24 @@ export async function ensureWasmInitialized(wasmInput?: any): Promise<void> {
 
     const errors: string[] = [];
     const environment = {
-      hasImportMeta: typeof import.meta !== 'undefined',
-      hasImportMetaUrl: typeof import.meta !== 'undefined' && !!import.meta.url,
-      hasWindow: typeof window !== 'undefined',
-      hasGlobal: typeof (globalThis as any).global !== 'undefined',
-      hasProcess: typeof (globalThis as any).process !== 'undefined',
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown'
+      hasImportMeta: typeof import.meta !== "undefined",
+      hasImportMetaUrl: typeof import.meta !== "undefined" && !!import.meta.url,
+      // hasWindow: typeof window !== "undefined",
+      hasGlobal: typeof (globalThis as any).global !== "undefined",
+      hasProcess: typeof (globalThis as any).process !== "undefined",
+      userAgent:
+        typeof navigator !== "undefined" ? navigator.userAgent : "unknown",
     };
-    
+
     try {
       let wasmBytes: ArrayBuffer | undefined;
-      
+
       if (environment.hasImportMetaUrl) {
         try {
-          const wasmUrl = new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url);
+          const wasmUrl = new URL(
+            "./pkg/filosign_crypto_utils_bg.wasm",
+            import.meta.url
+          );
           const response = await fetch(wasmUrl);
           if (!response.ok) {
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -55,7 +59,7 @@ export async function ensureWasmInitialized(wasmInput?: any): Promise<void> {
       }
 
       const wasmModule = await import("./pkg/filosign_crypto_utils_bg.wasm");
-      await wasm.default(wasmModule.default || wasmModule);
+      await wasm.default(wasmModule);
       wasmInitialized = true;
       return;
     } catch (e) {
@@ -64,7 +68,10 @@ export async function ensureWasmInitialized(wasmInput?: any): Promise<void> {
 
     if (environment.hasImportMetaUrl) {
       try {
-        const wasmUrl = new URL("./pkg/filosign_crypto_utils_bg.wasm", import.meta.url);
+        const wasmUrl = new URL(
+          "./pkg/filosign_crypto_utils_bg.wasm",
+          import.meta.url
+        );
         await wasm.default(wasmUrl);
         wasmInitialized = true;
         return;
@@ -93,9 +100,9 @@ export async function ensureWasmInitialized(wasmInput?: any): Promise<void> {
     const errorMessage = [
       `WASM initialization failed. All strategies failed.`,
       `Environment: ${JSON.stringify(environment, null, 2)}`,
-      `Errors:\n${errors.join('\n')}`
-    ].join('\n');
-    
+      `Errors:\n${errors.join("\n")}`,
+    ].join("\n");
+
     throw new Error(errorMessage);
   })();
 
