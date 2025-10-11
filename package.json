@@ -1,14 +1,14 @@
 {
     "name": "filosign-crypto-utils",
-    "version": "0.2.23",
+    "version": "0.2.26",
     "description": "Crypto utilities for FiloSign",
     "repository": {
         "type": "git",
         "url": "git+https://github.com/filosign-dapp/crypto-utils.git"
     },
     "exports": {
-        "/web": "./src/impl/web.ts",
-        "/node": "./src/impl/node.ts"
+        "./web": "./src/impl/web.ts",
+        "./node": "./src/impl/node.ts"
     },
     "keywords": [
         "cryptography",
