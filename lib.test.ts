@@ -1,479 +1,260 @@
-import {
-  generateRegisterChallenge,
+import cryptoUtils from "./src/impl/node";
+const {
+  generateRandomHex,
   deriveEncryptionMaterial,
   regenerateEncryptionKey,
   generateKeyPair,
   createSharedKey,
-  getPublicKeyFromEncryptionKey,
-  generateSalt,
-  generateSalts,
-  generateNonce,
-  ensureWasmInitialized,
-} from "./exports";
+  getPublicKeyFromRegenerated } = cryptoUtils;
 
 import { describe, it, expect } from "bun:test";
 
-await ensureWasmInitialized();
-
 describe("FiloSign Crypto Utils", () => {
   describe("Basic Functionality", () => {
-    it("should generate register challenge with proper randomization", () => {
-      const address = "0x1234567890abcdef";
-      const version = "1";
+    it("should generate random hex", async () => {
+      const res1 = await generateRandomHex();
+      const res2 = await generateRandomHex();
 
-      const nonce1 = generateNonce();
-      const nonce2 = generateNonce();
-
-      const challengeResult1 = generateRegisterChallenge(
-        address,
-        version,
-        nonce1
-      );
-      const challengeResult2 = generateRegisterChallenge(
-        address,
-        version,
-        nonce2
-      );
-
-      expect(challengeResult1.challenge).toBeDefined();
-      expect(challengeResult2.challenge).toBeDefined();
-      expect(challengeResult1.challenge).not.toBe(challengeResult2.challenge);
+      expect(res1).toBeDefined();
+      expect(res2).toBeDefined();
+      expect(res1).not.toBe(res2);
+      if (res1.ok && res2.ok) {
+        expect(res1.value.startsWith("0x")).toBe(true);
+        expect(res1.value.length).toBe(66); // 0x + 64 hex chars
+        expect(res2.value.startsWith("0x")).toBe(true);
+        expect(res2.value.length).toBe(66);
+      }
     });
 
-    it("should derive encryption material with randomization", () => {
-      const signatureB64 = "dGVzdCBzaWduYXR1cmUgZGF0YQ==";
+    it("should derive encryption material with randomization", async () => {
+      const signatureHex = "74657374207369676e61747572652064617461";
       const pin = "1234";
-      const pinSaltB64 = "cGluX3NhbHRfZXhhbXBsZQ==";
-      const authSaltB64 = "YXV0aF9zYWx0X2V4YW1wbGU=";
-      const wrapperSaltB64 = "d3JhcHBlcl9zYWx0X2V4YW1wbGU=";
-      const cid = "test_cid";
+      const pinSaltHex = "70696e5f73616c745f6578616d706c65";
+      const authSaltHex = "617574685f73616c745f6578616d706c65";
+      const wrapperSaltHex = "777261707065725f73616c745f6578616d706c65";
+      const infoHex = "746573745f636964";
 
-      const derivation1 = deriveEncryptionMaterial(
-        signatureB64,
+      const res1 = await deriveEncryptionMaterial(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        cid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        infoHex
       );
 
-      const derivation2 = deriveEncryptionMaterial(
-        signatureB64,
+      const res2 = await deriveEncryptionMaterial(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        cid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        infoHex
       );
 
-      expect(derivation1.commitment).toBeDefined();
-      expect(derivation2.commitment).toBeDefined();
-      expect(derivation1.commitment).not.toBe(derivation2.commitment);
+      expect(res1.ok).toBe(true);
+      expect(res2.ok).toBe(true);
+      if (res1.ok && res2.ok) {
+        expect(res1.value.commitment).toBeDefined();
+        expect(res2.value.commitment).toBeDefined();
+        expect(res1.value.commitment).not.toBe(res2.value.commitment);
+      }
     });
 
-    it("should regenerate encryption key consistently", () => {
-      const signatureB64 = "dGVzdCBzaWduYXR1cmUgZGF0YQ==";
+    it("should regenerate encryption key consistently", async () => {
+      const signatureHex = "74657374207369676e61747572652064617461";
       const pin = "1234";
-      const pinSaltB64 = "cGluX3NhbHRfZXhhbXBsZQ==";
-      const authSaltB64 = "YXV0aF9zYWx0X2V4YW1wbGU=";
-      const wrapperSaltB64 = "d3JhcHBlcl9zYWx0X2V4YW1wbGU=";
-      const cid = "test_cid";
+      const pinSaltHex = "70696e5f73616c745f6578616d706c65";
+      const authSaltHex = "617574685f73616c745f6578616d706c65";
+      const wrapperSaltHex = "777261707065725f73616c745f6578616d706c65";
+      const infoHex = "746573745f636964";
 
-      const derivation = deriveEncryptionMaterial(
-        signatureB64,
+      const derivationRes = await deriveEncryptionMaterial(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        cid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        infoHex
       );
 
-      const regeneratedResult1 = regenerateEncryptionKey(
-        signatureB64,
+      expect(derivationRes.ok).toBe(true);
+      if (!derivationRes.ok) return;
+
+      const regeneratedResult1 = await regenerateEncryptionKey(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        derivation.encSeed,
-        cid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        derivationRes.value.enc_seed,
+        infoHex
       );
 
-      const regeneratedResult2 = regenerateEncryptionKey(
-        signatureB64,
+      const regeneratedResult2 = await regenerateEncryptionKey(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        derivation.encSeed,
-        cid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        derivationRes.value.enc_seed,
+        infoHex
       );
 
-      expect(derivation.encryptionKey).toBe(regeneratedResult1.encryptionKey);
-      expect(regeneratedResult1.encryptionKey).toBe(
-        regeneratedResult2.encryptionKey
-      );
+      expect(regeneratedResult1.ok).toBe(true);
+      expect(regeneratedResult2.ok).toBe(true);
+      if (regeneratedResult1.ok && regeneratedResult2.ok) {
+        expect(derivationRes.value.encryption_key).toBe(regeneratedResult1.value.encryption_key);
+        expect(regeneratedResult1.value.encryption_key).toBe(regeneratedResult2.value.encryption_key);
+      }
     });
 
-    it("should fail with wrong PIN", () => {
-      const signatureB64 = "dGVzdCBzaWduYXR1cmUgZGF0YQ==";
+    it("should fail with wrong PIN", async () => {
+      const signatureHex = "74657374207369676e61747572652064617461";
       const pin = "1234";
       const wrongPin = "5678";
-      const pinSaltB64 = "cGluX3NhbHRfZXhhbXBsZQ==";
-      const authSaltB64 = "YXV0aF9zYWx0X2V4YW1wbGU=";
-      const wrapperSaltB64 = "d3JhcHBlcl9zYWx0X2V4YW1wbGU=";
-      const cid = "test_cid";
+      const pinSaltHex = "70696e5f73616c745f6578616d706c65";
+      const authSaltHex = "617574685f73616c745f6578616d706c65";
+      const wrapperSaltHex = "777261707065725f73616c745f6578616d706c65";
+      const infoHex = "746573745f636964";
 
-      const derivation = deriveEncryptionMaterial(
-        signatureB64,
+      const derivationRes = await deriveEncryptionMaterial(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        cid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        infoHex
       );
 
-      expect(() => {
-        regenerateEncryptionKey(
-          signatureB64,
-          wrongPin,
-          pinSaltB64,
-          authSaltB64,
-          wrapperSaltB64,
-          derivation.encSeed,
-          cid
-        );
-      }).toThrow();
+      expect(derivationRes.ok).toBe(true);
+      if (!derivationRes.ok) return;
+
+      const result = await regenerateEncryptionKey(
+        signatureHex,
+        wrongPin,
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        derivationRes.value.enc_seed,
+        infoHex
+      );
+
+      expect(result.ok).toBe(false);
     });
 
-    it("should produce different keys with different CID", () => {
-      const signatureB64 = "dGVzdCBzaWduYXR1cmUgZGF0YQ==";
+    it("should produce different keys with different info", async () => {
+      const signatureHex = "74657374207369676e61747572652064617461";
       const pin = "1234";
-      const pinSaltB64 = "cGluX3NhbHRfZXhhbXBsZQ==";
-      const authSaltB64 = "YXV0aF9zYWx0X2V4YW1wbGU=";
-      const wrapperSaltB64 = "d3JhcHBlcl9zYWx0X2V4YW1wbGU=";
-      const cid = "test_cid";
-      const differentCid = "different_cid";
+      const pinSaltHex = "70696e5f73616c745f6578616d706c65";
+      const authSaltHex = "617574685f73616c745f6578616d706c65";
+      const wrapperSaltHex = "777261707065725f73616c745f6578616d706c65";
+      const infoHex = "746573745f636964";
+      const differentInfoHex = "646966666572656e745f636964";
 
-      const derivation = deriveEncryptionMaterial(
-        signatureB64,
+      const derivationRes = await deriveEncryptionMaterial(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        cid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        infoHex
       );
 
-      const differentCidResult = regenerateEncryptionKey(
-        signatureB64,
+      expect(derivationRes.ok).toBe(true);
+      if (!derivationRes.ok) return;
+
+      const differentInfoResult = await regenerateEncryptionKey(
+        signatureHex,
         pin,
-        pinSaltB64,
-        authSaltB64,
-        wrapperSaltB64,
-        derivation.encSeed,
-        differentCid
+        pinSaltHex,
+        authSaltHex,
+        wrapperSaltHex,
+        derivationRes.value.enc_seed,
+        differentInfoHex
       );
 
-      expect(differentCidResult.encryptionKey).not.toBe(
-        derivation.encryptionKey
-      );
+      expect(differentInfoResult.ok).toBe(true);
+      if (differentInfoResult.ok) {
+        expect(differentInfoResult.value.encryption_key).not.toBe(derivationRes.value.encryption_key);
+      }
     });
   });
 
   describe("Key Exchange", () => {
-    it("should perform successful key exchange between two parties", () => {
-      const aliceAddress = "0x1111111111111111";
-      const bobAddress = "0x2222222222222222";
-      const version = "1";
+    it("should perform successful key exchange between two parties", async () => {
+      const aliceKeyPairRes = await generateKeyPair();
+      const bobKeyPairRes = await generateKeyPair();
 
-      // Alice setup
-      const aliceSalts = generateSalts();
-      const aliceNonce = generateNonce();
-      const aliceChallenge = generateRegisterChallenge(
-        aliceAddress,
-        version,
-        aliceNonce
-      );
-      const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
-      const alicePin = "1234";
-      const aliceCid = "alice_cid";
+      expect(aliceKeyPairRes.ok).toBe(true);
+      expect(bobKeyPairRes.ok).toBe(true);
+      if (!aliceKeyPairRes.ok || !bobKeyPairRes.ok) return;
 
-      const aliceMaterial = deriveEncryptionMaterial(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceCid
+      // Alice computes shared key using her private and Bob's public
+      const aliceSharedKey = await createSharedKey(
+        aliceKeyPairRes.value.private_key,
+        bobKeyPairRes.value.public_key
       );
 
-      // Bob setup
-      const bobSalts = generateSalts();
-      const bobNonce = generateNonce();
-      const bobChallenge = generateRegisterChallenge(
-        bobAddress,
-        version,
-        bobNonce
-      );
-      const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
-      const bobPin = "5678";
-      const bobCid = "bob_cid";
-
-      const bobMaterial = deriveEncryptionMaterial(
-        bobSignature,
-        bobPin,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt,
-        bobCid
+      // Bob computes shared key using his private and Alice's public
+      const bobSharedKey = await createSharedKey(
+        bobKeyPairRes.value.private_key,
+        aliceKeyPairRes.value.public_key
       );
 
-      // Get public keys
-      const alicePublicKeyResult = getPublicKeyFromEncryptionKey(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceMaterial.encSeed,
-        aliceCid
-      );
-
-      const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
-        bobSignature,
-        bobPin,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt,
-        bobMaterial.encSeed,
-        bobCid
-      );
-
-      expect(alicePublicKeyResult.publicKey).toBeDefined();
-      expect(bobPublicKeyResult.publicKey).toBeDefined();
-
-      // Create shared keys
-      const aliceSharedKey = createSharedKey(
-        aliceMaterial.encryptionKey,
-        bobPublicKeyResult.publicKey
-      );
-
-      const bobSharedKey = createSharedKey(
-        bobMaterial.encryptionKey,
-        alicePublicKeyResult.publicKey
-      );
-
-      expect(aliceSharedKey.sharedKey).toBe(bobSharedKey.sharedKey);
+      expect(aliceSharedKey.ok).toBe(true);
+      expect(bobSharedKey.ok).toBe(true);
+      if (aliceSharedKey.ok && bobSharedKey.ok) {
+        expect(aliceSharedKey.value.shared_key).toBe(bobSharedKey.value.shared_key);
+      }
     });
 
-    it("should produce consistent shared keys", () => {
-      const aliceAddress = "0x1111111111111111";
-      const bobAddress = "0x2222222222222222";
-      const version = "1";
+    it("should produce consistent shared keys", async () => {
+      const aliceKeyPairResult = await generateKeyPair();
+      const bobKeyPairResult = await generateKeyPair();
 
-      // Setup (simplified for consistency test)
-      const aliceSalts = generateSalts();
-      const aliceNonce = generateNonce();
-      const aliceChallenge = generateRegisterChallenge(
-        aliceAddress,
-        version,
-        aliceNonce
-      );
-      const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
-      const alicePin = "1234";
-      const aliceCid = "alice_cid";
+      expect(aliceKeyPairResult.ok).toBe(true);
+      expect(bobKeyPairResult.ok).toBe(true);
 
-      const aliceMaterial = deriveEncryptionMaterial(
-        aliceSignature,
-        alicePin,
-        aliceSalts.pinSalt,
-        aliceSalts.authSalt,
-        aliceSalts.wrapperSalt,
-        aliceCid
-      );
+      if (aliceKeyPairResult.ok && bobKeyPairResult.ok) {
+        // Test that the same inputs always produce the same shared key
+        const aliceSharedKey1 = await createSharedKey(
+          aliceKeyPairResult.value.private_key,
+          bobKeyPairResult.value.public_key
+        );
 
-      const bobSalts = generateSalts();
-      const bobNonce = generateNonce();
-      const bobChallenge = generateRegisterChallenge(
-        bobAddress,
-        version,
-        bobNonce
-      );
-      const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
-      const bobPin = "5678";
-      const bobCid = "bob_cid";
+        const aliceSharedKey2 = await createSharedKey(
+          aliceKeyPairResult.value.private_key,
+          bobKeyPairResult.value.public_key
+        );
 
-      const bobMaterial = deriveEncryptionMaterial(
-        bobSignature,
-        bobPin,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt,
-        bobCid
-      );
-
-      const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
-        bobSignature,
-        bobPin,
-        bobSalts.pinSalt,
-        bobSalts.authSalt,
-        bobSalts.wrapperSalt,
-        bobMaterial.encSeed,
-        bobCid
-      );
-
-      // Test that the same inputs always produce the same shared key
-      const aliceSharedKey1 = createSharedKey(
-        aliceMaterial.encryptionKey,
-        bobPublicKeyResult.publicKey
-      );
-
-      const aliceSharedKey2 = createSharedKey(
-        aliceMaterial.encryptionKey,
-        bobPublicKeyResult.publicKey
-      );
-
-      expect(aliceSharedKey1.sharedKey).toBe(aliceSharedKey2.sharedKey);
+        expect(aliceSharedKey1.ok).toBe(true);
+        expect(aliceSharedKey2.ok).toBe(true);
+        if (aliceSharedKey1.ok && aliceSharedKey2.ok) {
+          expect(aliceSharedKey1.value.shared_key).toBe(aliceSharedKey2.value.shared_key);
+        }
+      }
     });
-
-    // it("should produce different shared keys with different CIDs", () => {
-    //   const aliceAddress = "0x1111111111111111";
-    //   const bobAddress = "0x2222222222222222";
-    //   const version = "1";
-
-    //   // Setup (simplified)
-    //   const aliceSalts = generateSalts();
-    //   const aliceNonce = generateNonce();
-    //   const aliceChallenge = generateRegisterChallenge(
-    //     aliceAddress,
-    //     version,
-    //     aliceNonce
-    //   );
-    //   const aliceSignature = "YWxpY2Vfc2lnbmF0dXJlX2RhdGE=";
-    //   const alicePin = "1234";
-    //   const aliceCid = "alice_cid";
-
-    //   const aliceMaterial = deriveEncryptionMaterial(
-    //     aliceSignature,
-    //     alicePin,
-    //     aliceSalts.pinSalt,
-    //     aliceSalts.authSalt,
-    //     aliceSalts.wrapperSalt,
-    //     aliceCid
-    //   );
-
-    //   const bobSalts = generateSalts();
-    //   const bobNonce = generateNonce();
-    //   const bobChallenge = generateRegisterChallenge(
-    //     bobAddress,
-    //     version,
-    //     bobNonce
-    //   );
-    //   const bobSignature = "Ym9iX3NpZ25hdHVyZV9kYXRh";
-    //   const bobPin = "5678";
-    //   const bobCid = "bob_cid";
-
-    //   const bobMaterial = deriveEncryptionMaterial(
-    //     bobSignature,
-    //     bobPin,
-    //     bobSalts.pinSalt,
-    //     bobSalts.authSalt,
-    //     bobSalts.wrapperSalt,
-    //     bobCid
-    //   );
-
-    //   const bobPublicKeyResult = getPublicKeyFromEncryptionKey(
-    //     bobSignature,
-    //     bobPin,
-    //     bobSalts.pinSalt,
-    //     bobSalts.authSalt,
-    //     bobSalts.wrapperSalt,
-    //     bobMaterial.encSeed,
-    //     bobCid
-    //   );
-
-    //   const aliceSharedKey = createSharedKey(
-    //     aliceMaterial.encryptionKey,
-    //     bobPublicKeyResult.publicKey
-    //   );
-
-    //   const aliceSharedKeyDifferentCid = createSharedKey(
-    //     aliceMaterial.encryptionKey,
-    //     bobPublicKeyResult.publicKey
-    //   );
-
-    //   expect(aliceSharedKey.sharedKey).not.toBe(
-    //     aliceSharedKeyDifferentCid.sharedKey
-    //   );
-    // });
   });
 
   describe("Key Pair Generation", () => {
-    it("should generate unique key pairs", () => {
-      const keyPair1 = generateKeyPair();
-      const keyPair2 = generateKeyPair();
+    it("should generate unique key pairs", async () => {
+      const keyPair1Result = await generateKeyPair();
+      const keyPair2Result = await generateKeyPair();
 
-      expect(keyPair1.privateKey).toBeDefined();
-      expect(keyPair1.publicKey).toBeDefined();
-      expect(keyPair2.privateKey).toBeDefined();
-      expect(keyPair2.publicKey).toBeDefined();
+      expect(keyPair1Result.ok).toBe(true);
+      expect(keyPair2Result.ok).toBe(true);
 
-      expect(keyPair1.privateKey).not.toBe(keyPair2.privateKey);
-      expect(keyPair1.publicKey).not.toBe(keyPair2.publicKey);
+      if (keyPair1Result.ok && keyPair2Result.ok) {
+        expect(keyPair1Result.value.private_key).toBeDefined();
+        expect(keyPair1Result.value.public_key).toBeDefined();
+        expect(keyPair2Result.value.private_key).toBeDefined();
+        expect(keyPair2Result.value.public_key).toBeDefined();
+
+        expect(keyPair1Result.value.private_key).not.toBe(keyPair2Result.value.private_key);
+        expect(keyPair1Result.value.public_key).not.toBe(keyPair2Result.value.public_key);
+      }
     });
   });
 
-  describe("Salt Generation", () => {
-    it("should generate salts of correct length", () => {
-      const s16 = generateSalt(16);
-      const s32 = generateSalt(32);
-
-      expect(typeof s16).toBe("string");
-      expect(typeof s32).toBe("string");
-
-      const b16 = Buffer.from(s16, "base64");
-      const b32 = Buffer.from(s32, "base64");
-
-      expect(b16.length).toBe(16);
-      expect(b32.length).toBe(32);
-    });
-
-    it("should generate random salts", () => {
-      const s1 = generateSalt(16);
-      const s2 = generateSalt(16);
-
-      expect(s1).not.toBe(s2);
-    });
-
-    it("should throw error for invalid salt length", () => {
-      expect(() => generateSalt(0)).toThrow();
-      expect(() => generateSalt(1025)).toThrow();
-    });
-
-    it("should generate salt sets correctly", () => {
-      const salts1 = generateSalts();
-      const salts2 = generateSalts();
-
-      expect(salts1.pinSalt).toBeDefined();
-      expect(salts1.authSalt).toBeDefined();
-      expect(salts1.wrapperSalt).toBeDefined();
-
-      expect(salts1.pinSalt).not.toBe(salts2.pinSalt);
-      expect(salts1.authSalt).not.toBe(salts2.authSalt);
-      expect(salts1.wrapperSalt).not.toBe(salts2.wrapperSalt);
-    });
-  });
-
-  describe("Nonce Generation", () => {
-    it("should generate unique nonces", () => {
-      const nonce1 = generateNonce();
-      const nonce2 = generateNonce();
-
-      expect(typeof nonce1).toBe("string");
-      expect(typeof nonce2).toBe("string");
-      expect(nonce1).not.toBe(nonce2);
-
-      const b1 = Buffer.from(nonce1, "base64");
-      expect(b1.length).toBe(32);
-    });
-  });
 });
